@@ -611,24 +611,42 @@ cv.addEventListener('touchend',e=>{e.preventDefault();if(state!=='play')return;i
 function startGame(){document.getElementById('ov').style.display='none';initGame();state='play';requestAnimationFrame(loop);}
 document.getElementById('sb').addEventListener('click',startGame);
 
-// ── 開始畫面連點外星人6下 → 秘密模式 ──
-cv.addEventListener('click',e=>{
-  if(state!=='idle') return;
-  const rc=cv.getBoundingClientRect();
-  let px2=(e.clientX-rc.left)*(W/rc.width);
-  let py2=(e.clientY-rc.top)*(H/rc.height);
-  // 外星人在 W/2, H-80 附近（±35px）
-  if(Math.abs(px2-W/2)<35&&Math.abs(py2-(H-80))<35){
-    alienClickCount++;alienClickTimer=180;
+// ── 點 AEREA51TW 標誌 6 下 → 秘密模式 ──
+(function(){
+  const a51el=document.querySelector('#ov .a51');
+  if(!a51el)return;
+  a51el.style.cursor='pointer';
+  a51el.style.userSelect='none';
+  let clickTimer=null;
+  a51el.addEventListener('click',e=>{
+    if(state!=='idle')return;
+    e.stopPropagation();
+    alienClickCount++;
+    // 每次點擊閃一下標誌
+    a51el.style.background='#00ff88';
+    a51el.style.color='#002211';
+    setTimeout(()=>{a51el.style.background='#00aa44';a51el.style.color='#fff';},120);
+    // 顯示進度小點
+    a51el.title=`${alienClickCount}/6`;
+    // 重設計時器（3秒內沒繼續點就歸零）
+    if(clickTimer)clearTimeout(clickTimer);
+    clickTimer=setTimeout(()=>{alienClickCount=0;a51el.title='';},3000);
     if(alienClickCount>=6){
-      secretModeActive=true;alienClickCount=0;
-      // 短暫顯示提示（畫在 canvas）
-      cx.fillStyle='rgba(255,100,255,0.85)';cx.fillRect(20,H/2-20,W-40,36);
-      cx.font='bold 12px "Courier New"';cx.fillStyle='#fff';cx.textAlign='center';
-      cx.fillText('🛸 SECRET MODE UNLOCKED! 🛸',W/2,H/2+4);
+      clearTimeout(clickTimer);alienClickCount=0;a51el.title='';
+      secretModeActive=true;
+      // 標誌變彩虹閃爍提示
+      a51el.style.background='linear-gradient(90deg,#88ddff,#ddaaff)';
+      a51el.style.color='#000';
+      a51el.textContent='🛸 SECRET MODE ON 🛸';
+      // 在 overlay 上顯示訊息
+      const msg=document.createElement('div');
+      msg.style.cssText='font-size:11px;color:#ff88ff;font-family:"Courier New",monospace;margin-top:8px;text-align:center';
+      msg.textContent='隱藏模式已啟動！子彈引擎變彩虹色 ✨';
+      a51el.parentNode.insertBefore(msg,a51el.nextSibling);
+      setTimeout(()=>{if(msg.parentNode)msg.parentNode.removeChild(msg);},4000);
     }
-  }
-});
+  });
+})();
 
 updateBestDisplay();
 initGame();
