@@ -43,6 +43,16 @@ let dragStart=null,touchMoved=false;
 let spawnTimer=0,spawnIv=90;
 let lemonBossActive=false,mambaActive=false,lemonBoss=null,mamba=null;
 let shakeTimer=0,superMode=0;
+// ── 彩蛋系統 ─────────────────────────────────────────────
+let eggScore51Done=false;
+let killCount={heart:0,star:0,moon:0,butterfly:0};
+let eggUnlocked={heart:false,star:false,moon:false,butterfly:false};
+let eggAllCollected=false,eggFinalDone=false,eggFinalKills=0,eggAnyKillAfter=0;
+let eggMsg='',eggMsgTimer=0,eggMsgColor='#00ffaa';
+let eggFlash='',eggFlashTimer=0,eggFlashColor='#00ffaa';
+let alienClickCount=0,alienClickTimer=0;
+let secretModeActive=false;
+let topEdgeTimer=0,topEggDone=false;
 
 function hud(){
   cx.fillStyle='rgba(0,0,10,0.88)';cx.fillRect(0,0,W,24);
@@ -313,6 +323,12 @@ function drawPickup(p){
 function initGame(){
   score=0;coins=0;lives=3;fr=0;spawnIv=90;spawnTimer=0;
   lemonBossActive=false;mambaActive=false;lemonBoss=null;mamba=null;shakeTimer=0;superMode=0;
+  eggScore51Done=false;
+  killCount={heart:0,star:0,moon:0,butterfly:0};
+  eggUnlocked={heart:false,star:false,moon:false,butterfly:false};
+  eggAllCollected=false;eggFinalDone=false;eggFinalKills=0;eggAnyKillAfter=0;
+  eggMsg='';eggMsgTimer=0;eggFlash='';eggFlashTimer=0;
+  topEdgeTimer=0;topEggDone=false;secretModeActive=false;
   ship={x:W/2,y:H-80,tx:W/2,ty:H-80};
   bullets=[];enemies=[];bossBullets=[];particles=[];powerups=[];
   stars=Array.from({length:70},()=>({x:Math.floor(Math.random()*W/P)*P,y:Math.floor(Math.random()*H/P)*P,s:Math.random()<0.25?2:1,sp:Math.random()*0.55+0.2,ph:(Math.random()*30)|0}));
@@ -348,6 +364,70 @@ function spawnParticles(x,y,color,n){for(let i=0;i<n;i++){let a=Math.random()*Ma
 function spawnCoin(x,y){particles.push({x,y,vx:(Math.random()-0.5)*2.5,vy:-2-Math.random()*3,life:75,maxLife:75,color:'#ffd700',coin:true});}
 function getPos(e){const rc=cv.getBoundingClientRect(),sx=W/rc.width,sy=H/rc.height;if(e.touches)return{x:(e.touches[0].clientX-rc.left)*sx,y:(e.touches[0].clientY-rc.top)*sy};return{x:(e.clientX-rc.left)*sx,y:(e.clientY-rc.top)*sy};}
 function checkBulletHit(obj,rad){let hit=false;bullets=bullets.filter(b=>{let dx=b.x-obj.x,dy=b.y-obj.y;if(Math.sqrt(dx*dx+dy*dy)<rad+5){hit=true;spawnParticles(b.x,b.y,'#ffff00',4);return b.laser;}return true;});return hit;}
+
+// ── 彩蛋函式 ──────────────────────────────────────────────
+function triggerFlash(text,color){eggFlash=text;eggFlashTimer=180;eggFlashColor=color||'#00ffaa';}
+function triggerMsg(text,color){eggMsg=text;eggMsgTimer=220;eggMsgColor=color||'#00ffaa';}
+
+function onEnemyKilled(type){
+  // 計數各類型
+  if(type==='heart'||type==='star'||type==='moon'||type==='butterfly') killCount[type]++;
+  // 若四個都已解鎖，累計任意擊殺
+  if(eggAllCollected&&!eggFinalDone){
+    eggAnyKillAfter++;
+    if(eggAnyKillAfter>=17){eggFinalDone=true;triggerFlash('We are the æspa','#ff88cc');}
+  }
+  // 個別解鎖檢查
+  if(!eggUnlocked.heart&&killCount.heart>=411){eggUnlocked.heart=true;triggerMsg('Karina Rocket Puncher 🚀','#ff66aa');}
+  if(!eggUnlocked.star&&killCount.star>=101){eggUnlocked.star=true;triggerMsg('Winter Armamenter ❄️','#aaddff');}
+  if(!eggUnlocked.moon&&killCount.moon>=1030){eggUnlocked.moon=true;triggerMsg('Giselle Xenoglossy ✨','#ffdd88');}
+  if(!eggUnlocked.butterfly&&killCount.butterfly>=1023){eggUnlocked.butterfly=true;triggerMsg('Ningning E.D Hacker 🦋','#dd88ff');}
+  // 四個全解鎖
+  if(!eggAllCollected&&eggUnlocked.heart&&eggUnlocked.star&&eggUnlocked.moon&&eggUnlocked.butterfly){
+    eggAllCollected=true;eggAnyKillAfter=0;triggerMsg('全員集結！再擊殺17個...','#ffffff');
+  }
+}
+
+function drawEggOverlay(){
+  // 閃字
+  if(eggFlashTimer>0){
+    eggFlashTimer--;
+    let alpha=eggFlashTimer>150?1:eggFlashTimer/150;
+    let sz=eggFlashTimer>150?32:32+(150-eggFlashTimer)*0.15;
+    cx.save();cx.globalAlpha=alpha;
+    cx.font=`bold ${Math.round(sz)}px "Courier New"`;
+    cx.textAlign='center';
+    // "We are the æspa" 用水藍→淡粉紫漸層
+    if(eggFlash==='We are the æspa'){
+      let tw=cx.measureText(eggFlash).width;
+      let grd=cx.createLinearGradient(W/2-tw/2,0,W/2+tw/2,0);
+      grd.addColorStop(0,'#88ddff');   // 水藍
+      grd.addColorStop(1,'#ddaaff');   // 淡粉紫
+      cx.fillStyle=grd;
+      // 陰影用雙色混合的中間色
+      cx.shadowColor='#bbccff';cx.shadowBlur=24;
+    } else {
+      cx.fillStyle=eggFlashColor;
+      cx.shadowColor=eggFlashColor;cx.shadowBlur=20;
+    }
+    cx.fillText(eggFlash,W/2,H/2);
+    cx.shadowBlur=0;cx.restore();
+  }
+  // 小訊息（底部浮現）
+  if(eggMsgTimer>0){
+    eggMsgTimer--;
+    let alpha=eggMsgTimer>180?1:eggMsgTimer/180;
+    cx.save();cx.globalAlpha=alpha;
+    cx.fillStyle='rgba(0,0,0,0.6)';
+    cx.fillRect(0,H/2+60,W,36);
+    cx.font='bold 13px "Courier New"';
+    cx.fillStyle=eggMsgColor;
+    cx.textAlign='center';
+    cx.shadowColor=eggMsgColor;cx.shadowBlur=10;
+    cx.fillText(eggMsg,W/2,H/2+83);
+    cx.shadowBlur=0;cx.restore();
+  }
+}
 
 const SHIP_MIN_Y=H/3,SHIP_MAX_Y=H-30;
 
@@ -445,7 +525,9 @@ function loop(){
           spawnParticles(e.x,e.y,e.type==='snake'?'#8800ff':'#ffaa00',14);
           for(let c=0;c<e.coins;c++)spawnCoin(e.x+(Math.random()*20-10),e.y);
           if(score>100&&Math.random()<0.05)powerups.push({x:e.x,y:e.y,vy:1.2,type:'super'});
-          score+=e.type==='snake'?25:12;dead=true;
+          score+=e.type==='snake'?25:12;
+          onEnemyKilled(e.type);
+          dead=true;
         }
         return b.laser;
       }
@@ -480,16 +562,29 @@ function loop(){
     return p.life>0;
   });
 
+  // ── 51分彩蛋 ──
+  if(!eggScore51Done&&score>=51){eggScore51Done=true;triggerFlash('aerea51tw','#00ffcc');}
+
+  // ── 飛到頂端彩蛋 ──
+  if(ship.y<=SHIP_MIN_Y+4){
+    topEdgeTimer++;
+    if(topEdgeTimer>120&&!topEggDone){topEggDone=true;triggerMsg('你發現隱藏訊息！AEREA51TW 永遠支持 aespa 🛸','#ff88ff');}
+  } else {topEdgeTimer=0;}
+
+  // ── 秘密模式：開始畫面點外星人6下觸發，讓子彈顏色變彩虹 ──
+
   if(superMode>0&&fr%6<3){cx.strokeStyle='rgba(255,255,0,0.5)';cx.lineWidth=3;cx.strokeRect(2,26,W-4,H-28);}
+  if(secretModeActive&&fr%6<3){cx.strokeStyle='rgba(255,100,255,0.4)';cx.lineWidth=2;cx.strokeRect(4,28,W-8,H-32);}
 
   let ef=fr%10<5;
-  pr(ship.x-3,ship.y+16,6,ef?8:6,'#00ff88');
+  pr(ship.x-3,ship.y+16,6,ef?8:6,secretModeActive?`hsl(${fr*6%360},100%,60%)`:'#00ff88');
   pr(ship.x-2,ship.y+16,4,ef?6:4,'#aaffcc');
   drawUFO(ship.x,ship.y);
 
   for(let i=0;i<Math.min(lives,9);i++)pr(W-12-i*14,H-18,10,10,'#ff4488');
   if(shakeTimer>0)cx.restore();
   hud();
+  drawEggOverlay();
 }
 
 function updateBestDisplay(){const el=document.getElementById('bestDisp');if(el)el.textContent='最佳紀錄：'+bestScore;}
@@ -497,8 +592,11 @@ function updateBestDisplay(){const el=document.getElementById('bestDisp');if(el)
 function endGame(){
   state='idle';
   if(score>bestScore)bestScore=score;
+  let extraMsg='';
+  if(score>=10000) extraMsg='<div style="font-size:11px;color:#00ffcc;margin-top:8px;font-family:\'Courier New\',monospace">恭喜你並不是遊戲黑洞，跟aespa擁有非常大的區別 😂🎉</div>';
+  else if(score<200) extraMsg='<div style="font-size:11px;color:#ff88aa;margin-top:8px;font-family:\'Courier New\',monospace">難道...你是aespa派來的遊戲黑洞?? 🕳️👾</div>';
   const ov=document.getElementById('ov');
-  ov.innerHTML=`<h2>GAME OVER</h2><div class="a51">AEREA51TW</div><div class="best">最佳紀錄：${bestScore}</div><div class="sub">本次分數: ${score}<br>金幣數量: ${coins}</div><button id="sb" style="background:#fff;border:3px solid #888;color:#000;padding:13px 42px;font-size:16px;font-weight:bold;cursor:pointer;letter-spacing:3px;font-family:'Courier New',monospace">▶ 再玩一次 ◀</button>`;
+  ov.innerHTML=`<h2>GAME OVER</h2><div class="a51">AEREA51TW</div><div class="best">最佳紀錄：${bestScore}</div><div class="sub">本次分數: ${score}<br>金幣數量: ${coins}${extraMsg}</div><button id="sb" style="background:#fff;border:3px solid #888;color:#000;padding:13px 42px;font-size:16px;font-weight:bold;cursor:pointer;letter-spacing:3px;font-family:'Courier New',monospace">▶ 再玩一次 ◀</button>`;
   ov.style.display='flex';
   document.getElementById('sb').addEventListener('click',startGame);
 }
@@ -512,6 +610,26 @@ cv.addEventListener('touchend',e=>{e.preventDefault();if(state!=='play')return;i
 
 function startGame(){document.getElementById('ov').style.display='none';initGame();state='play';requestAnimationFrame(loop);}
 document.getElementById('sb').addEventListener('click',startGame);
+
+// ── 開始畫面連點外星人6下 → 秘密模式 ──
+cv.addEventListener('click',e=>{
+  if(state!=='idle') return;
+  const rc=cv.getBoundingClientRect();
+  let px2=(e.clientX-rc.left)*(W/rc.width);
+  let py2=(e.clientY-rc.top)*(H/rc.height);
+  // 外星人在 W/2, H-80 附近（±35px）
+  if(Math.abs(px2-W/2)<35&&Math.abs(py2-(H-80))<35){
+    alienClickCount++;alienClickTimer=180;
+    if(alienClickCount>=6){
+      secretModeActive=true;alienClickCount=0;
+      // 短暫顯示提示（畫在 canvas）
+      cx.fillStyle='rgba(255,100,255,0.85)';cx.fillRect(20,H/2-20,W-40,36);
+      cx.font='bold 12px "Courier New"';cx.fillStyle='#fff';cx.textAlign='center';
+      cx.fillText('🛸 SECRET MODE UNLOCKED! 🛸',W/2,H/2+4);
+    }
+  }
+});
+
 updateBestDisplay();
 initGame();
 cx.fillStyle='#000010';cx.fillRect(0,0,W,H);
