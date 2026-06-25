@@ -25,7 +25,7 @@ html,body{background:#000010;display:flex;justify-content:center;align-items:fle
   <h2>★ ALIEN BLASTER ★</h2>
   <div class="a51">AEREA51TW</div>
   <div class="best" id="bestDisp">最佳紀錄：0</div>
-  <div class="sub">點擊 → 射擊 ／ 拖動 → 移動<br>200分 → 檸檬王降臨<br>500分 → 黑曼巴覺醒<br>💚血包 ／ ✨金片超級模式(5%)</div>
+  <div class="sub">點擊 → 射擊 ／ 拖動 → 移動<br>200分 → 檸檬王降臨<br>2000分 → 黑曼巴覺醒</div>
   <button id="sb">▶ 開始遊戲 ◀</button>
 </div>
 </div>
@@ -264,19 +264,50 @@ function drawMambaHead(mb){
   pr(x-r,y+r+8,r*2,7,'#2d0055');pr(x-r,y+r+8,r*2*(mb.hp/mb.maxHp),7,'#aa00ff');
 }
 
-function drawPickup(p){
-  if(p.type==='hp'){
-    cx.fillStyle='#00cc44';cx.beginPath();cx.arc(snap(p.x),snap(p.y),8,Math.PI,0);cx.fill();
-    pr(p.x-8,p.y,16,4,'#00cc44');pr(p.x-6,p.y+1,12,3,'#004411');
-    pr(p.x-5,p.y-6,2,6,'#00ff66');pr(p.x-1,p.y-7,3,7,'#00ff66');pr(p.x+3,p.y-5,2,5,'#00ff66');
-    cx.fillStyle='#88ffaa';cx.fillRect(snap(p.x-4),snap(p.y-5),3,3);
-  } else {
-    cx.fillStyle='#f5e000';cx.beginPath();cx.arc(snap(p.x),snap(p.y),8,Math.PI,0);cx.fill();
-    pr(p.x-8,p.y,16,4,'#f5e000');pr(p.x-6,p.y+1,12,3,'#886600');
-    pr(p.x-5,p.y-6,2,6,'#ffff88');pr(p.x-1,p.y-7,3,7,'#ffff88');pr(p.x+3,p.y-5,2,5,'#ffff88');
-    cx.fillStyle='#ffffff';cx.fillRect(snap(p.x-4),snap(p.y-5),3,3);
-    if(fr%8<4){pr(p.x-11,p.y-9,5,5,'#ffffaa');pr(p.x+6,p.y-7,5,5,'#ffffaa');}
+function drawLemonSlice(x,y,isGold){
+  // 顏色設定：綠色HP版 / 淡金黃超級版
+  let skin = isGold?'#e8c840':'#88cc00';
+  let flesh= isGold?'#f5e87a':'#bbee44';
+  let pale = isGold?'#fdf5b0':'#ddff99';
+  let seg  = isGold?'#c8a830':'#66aa00';
+  let ctr  = isGold?'#fffde0':'#eeffcc';
+  let R=10; // 切片半徑
+  // 金色版：發光暈圈
+  if(isGold){
+    let glow=fr%16<8?0.55:0.35;
+    cx.globalAlpha=glow;
+    cx.fillStyle='#ffe066';
+    cx.beginPath();cx.arc(snap(x),snap(y),R+5,0,Math.PI*2);cx.fill();
+    cx.globalAlpha=1;
   }
+  // 外皮（整圓）
+  cx.fillStyle=skin;
+  cx.beginPath();cx.arc(snap(x),snap(y),R,0,Math.PI*2);cx.fill();
+  // 果肉（略小的圓）
+  cx.fillStyle=flesh;
+  cx.beginPath();cx.arc(snap(x),snap(y),R-2,0,Math.PI*2);cx.fill();
+  // 8片果瓣（放射狀深色線）
+  cx.strokeStyle=seg;cx.lineWidth=1;
+  for(let i=0;i<8;i++){
+    let a=i*Math.PI/4;
+    cx.beginPath();
+    cx.moveTo(snap(x),snap(y));
+    cx.lineTo(snap(x+Math.cos(a)*(R-2)),snap(y+Math.sin(a)*(R-2)));
+    cx.stroke();
+  }
+  // 中心白點
+  cx.fillStyle=ctr;
+  cx.beginPath();cx.arc(snap(x),snap(y),2,0,Math.PI*2);cx.fill();
+  // 高光（左上）
+  cx.fillStyle='rgba(255,255,255,0.7)';
+  cx.beginPath();cx.arc(snap(x-3),snap(y-3),2,0,Math.PI*2);cx.fill();
+  // 像素感外框
+  pr(x-R,y-1,2,2,skin);pr(x+R-2,y-1,2,2,skin);
+  pr(x-1,y-R,2,2,skin);pr(x-1,y+R-2,2,2,skin);
+}
+
+function drawPickup(p){
+  drawLemonSlice(p.x,p.y,p.type==='super');
 }
 
 function initGame(){
@@ -330,7 +361,7 @@ function loop(){
   stars.forEach(s=>{s.y+=s.sp;if(s.y>H)s.y=0;cx.fillStyle=(fr+s.ph)%26<13?'#ffffff':'#3333aa';cx.fillRect(snap(s.x),snap(s.y),s.s*P,s.s*P);});
 
   if(!lemonBossActive&&score>=200)spawnLemonBoss();
-  if(!mambaActive&&score>=500)spawnMamba();
+  if(!mambaActive&&score>=2000)spawnMamba();
   spawnTimer++;if(spawnTimer>=spawnIv&&!mambaActive){spawnEnemy();spawnTimer=0;if(fr>400)spawnIv=Math.max(38,spawnIv-1);}
 
   ship.x+=(ship.tx-ship.x)*0.14;ship.y+=(ship.ty-ship.y)*0.14;
