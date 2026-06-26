@@ -67,27 +67,27 @@ let lemonBossActive=false,mambaActive=false,lemonBoss=null,mamba=null;
 
 // ── 今日挑戰系統 ─────────────────────────────────────────
 const CHALLENGE_DAYS=[
-  {id:'karina', name:"Karina's Challenge Day", emoji:'🔵',
+  {id:'karina', name:"Karina's Challenge Day", emoji:'🥺',
    date:'事件日期：2025.05.29',
    body:`2025年5月29日，Karina 在活動上親口說出了「aespo」這個神奇的詞。\n現場所有人陷入沉默——\n「我們是 aespa，不是 aespo 啦！」（全場笑爛）\n直到今天，沒有人知道 aespo 是什麼。\n也許是外星語。`,
    hud:'aespo...aespo???', enemy:'aespo', bullet:'heart_blue'},
-  {id:'giselle', name:"Giselle's Challenge Day", emoji:'🩷',
+  {id:'giselle', name:"Giselle's Challenge Day", emoji:'🌸',
    date:'事件日期：2024.08.09',
    body:`演唱會進行中，一隻蜻蜓突然降落舞台。\nGiselle 當場尖叫、在舞台上狂奔，\n並宣告：「我想回家。」\n蜻蜓沒有離場，Giselle 繼續表演。\n這是她迄今最勇敢的一次(?)`,
    hud:'我想要回家～(怕', enemy:'dragonfly', bullet:'moon_yellow'},
-  {id:'winter', name:"Winter's Challenge Day", emoji:'⚪',
+  {id:'winter', name:"Winter's Challenge Day", emoji:'☃️',
    date:'事件日期：2024.10.20',
    body:`舞台乾冰效果全開的那一刻，\nWinter 的頭髮緩緩飄起。\n靜電選中了她。\n「拔絲冬冬」就此誕生，永載史冊。\n她說這叫氛圍感。我們說這叫天選之人。`,
    hud:'拔絲...冬冬??!!', enemy:'yam', bullet:'star_yellow'},
-  {id:'ningning', name:"Ningning's Challenge Day", emoji:'🟣',
+  {id:'ningning', name:"Ningning's Challenge Day", emoji:'🐈‍⬛',
    date:'事件日期：2024.08.11',
    body:`演唱會安可環節，\n台下粉絲自發唱起應援曲，\naespa 四人靜靜聆聽了整整五分鐘。\n最後 Ningning 開口：\n「聽了大家五分鐘才聽出來⋯⋯\n感謝大家美麗的參與～」\n她說這是讚美。我們選擇相信她。`,
    hud:'感謝大家美麗的參與', enemy:'note', bullet:'butterfly_purple'},
-  {id:'ae', name:'Be my æ Day', emoji:'⬛',
+  {id:'ae', name:'Be my æ Day', emoji:'❤️🧡💛💚💙🩵💜',
    date:'無特定事件',
    body:`ae 的力量滲透了今天。\n但沒關係——\naespa 四人一直都在，\nMY 也一直都在。\n\n我們在同一個宇宙裡，\n是彼此最珍貴的朋友。\n\n一起打倒黑曼巴吧 🖤`,
    hud:'Be / my / æ', enemy:'snake_only', bullet:'ae_text'},
-  {id:'lemon', name:'Lemon Day~', emoji:'🟡',
+  {id:'lemon', name:'Lemon Day~', emoji:'🍋',
    date:'無特定事件',
    body:`今天是 Lemonade 日。\n檸檬王的親戚們全員出動，\n大的小的圓的扁的，全部都是檸檬。\n沒有別的。就是檸檬。\n為什麼？因為今天是 Lemon Day。`,
    hud:'Lemon Day～🍋', enemy:'mini_lemon', bullet:'note_green'},
@@ -96,7 +96,7 @@ const CHALLENGE_DAYS=[
    body:`KWANGYA 今天開放入侵。\nSM 大樓的燈還亮著，\n合約還沒有到期，\n但你已經在這裡了。\n打倒大樓，帶她們回家。`,
    hud:'BEAT KWANGYA 🔥', enemy:'sm_building', bullet:'fire'},
 ];
-const REST_DAY={id:'rest', name:'公休日', emoji:'📅'};
+const REST_DAY={id:'rest', name:'公休日', emoji:'📅👽'};
 
 // Loop 排程（localStorage 存狀態）
 let todayChallenge=null; // 今天的挑戰物件
