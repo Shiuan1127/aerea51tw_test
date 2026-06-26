@@ -285,12 +285,18 @@ function drawCatBody(x,y,bodyCol,earCol,faceCol){
 }
 // 統一表情：X眼 + 吐舌（顏色可自訂）
 function drawXFace(x,y,eyeCol,noseCol,tongueCol){
+  // 品紅眉毛
+  pr(x-9,y-9,5,2,'#ff44aa');pr(x+4,y-9,5,2,'#ff44aa');
   // 左X眼
   pr(x-9,y-7,3,3,eyeCol);pr(x-7,y-5,3,3,eyeCol);
   pr(x-9,y-5,3,3,eyeCol);pr(x-7,y-7,3,3,eyeCol);
   // 右X眼
   pr(x+4,y-7,3,3,eyeCol);pr(x+6,y-5,3,3,eyeCol);
   pr(x+4,y-5,3,3,eyeCol);pr(x+6,y-7,3,3,eyeCol);
+  // 腮紅（橢圓長條，眼睛外側下方）
+  cx.fillStyle='#ffaabb';
+  cx.beginPath();cx.ellipse(snap(x-8),snap(y+0),4,2,0,0,Math.PI*2);cx.fill();
+  cx.beginPath();cx.ellipse(snap(x+8),snap(y+0),4,2,0,0,Math.PI*2);cx.fill();
   // 鼻
   pr(x-1,y,2,2,noseCol);
   // 嘴+舌
@@ -368,32 +374,53 @@ function drawLemonNingningIP(x,y){
   drawCatIP(x,y,'#ddd060','#bbaa22','#fffff0','#886600','#aa9900','#ddcc00','#ffcc00');
 }
 
-// ── Be my æ Day：四小隻原色 + 中間迷你UFO ─────────────────
+// ── 縮小版原版UFO（MY代表）──────────────────────────────
+function drawMiniUFO(x,y){
+  const S=0.65;
+  function rp(rx,ry,rw,rh,c){pr(x+rx*S,y+ry*S,Math.max(P,rw*S),Math.max(P,rh*S),c);}
+  rp(-10,0,5,9,'#009933'); rp(4,0,5,9,'#009933');
+  rp(-8,-22,16,24,'#44cc44'); rp(-11,-15,22,14,'#44cc44');
+  rp(-6,-13,5,5,'#66ee66'); rp(-3,-9,3,3,'#44cc44');
+  rp(-11,-19,9,11,'#ffff00'); rp(2,-19,9,11,'#ffff00');
+  rp(-10,-18,7,9,'#ff8800'); rp(3,-18,7,9,'#ff8800');
+  rp(-9,-17,5,7,'#111100'); rp(4,-17,5,7,'#111100');
+  rp(-8,-16,3,3,'#fff');    rp(5,-16,3,3,'#fff');
+  rp(-13,-22,9,3,'#ff44aa'); rp(4,-22,9,3,'#ff44aa');
+  rp(-4,-7,8,3,'#ff2200');
+  rp(-18,8,36,5,'#223355'); rp(-20,10,40,4,'#2244aa'); rp(-16,13,32,3,'#1a2288');
+  rp(-12,2,24,6,'#334466'); rp(-14,3,28,5,'#3355aa');
+  let lc=['#00ffff','#ffff44','#00ffff'];
+  for(let i=0;i<3;i++) pr(x+(-8+i*8)*S,y+9*S,4,3,lc[i]);
+  let ef=fr%10<5;
+  pr(x-2,y+16,5,ef?7:5,'#00ff88'); pr(x-1,y+16,3,ef?5:4,'#aaffcc');
+}
+
+// ── Be my æ Day：菱形排列，aespa 包圍 MY ──────────────────
 function drawAeRow(x,y){
-  let sp=46;
-  drawScaledIP(x-sp*2,y,0.65,drawKarinaIP);
-  drawScaledIP(x-sp,  y,0.65,drawGiselleIP);
+  let r=72,sc=0.85;
+  drawScaledIP(x,    y-r, sc, drawWinterIP);
+  drawScaledIP(x-r,  y,   sc, drawGiselleIP);
+  drawScaledIP(x+r,  y,   sc, drawNingningIP);
+  drawScaledIP(x,    y+r, sc, drawKarinaIP);
   drawMiniUFO(x,y);
-  drawScaledIP(x+sp,  y,0.65,drawWinterIP);
-  drawScaledIP(x+sp*2,y,0.65,drawNingningIP);
 }
 
 // ── kwangya日：四小隻彩色一排 ───────────────────────────
 function drawColorRow(x,y){
-  let sp=52;
-  drawScaledIP(x-sp*1.5,y,0.65,drawKarinaIP);
-  drawScaledIP(x-sp*0.5,y,0.65,drawGiselleIP);
-  drawScaledIP(x+sp*0.5,y,0.65,drawWinterIP);
-  drawScaledIP(x+sp*1.5,y,0.65,drawNingningIP);
+  let sp=36,sc=0.5;
+  drawScaledIP(x-sp*1.5,y,sc,drawKarinaIP);
+  drawScaledIP(x-sp*0.5,y,sc,drawGiselleIP);
+  drawScaledIP(x+sp*0.5,y,sc,drawWinterIP);
+  drawScaledIP(x+sp*1.5,y,sc,drawNingningIP);
 }
 
 // ── Lemon Day：四小隻黃色檸檬版一排 ────────────────────────
 function drawLemonRow(x,y){
-  let sp=52;
-  drawScaledIP(x-sp*1.5,y,0.65,drawLemonKarinaIP);
-  drawScaledIP(x-sp*0.5,y,0.65,drawLemonGiselleIP);
-  drawScaledIP(x+sp*0.5,y,0.65,drawLemonWinterIP);
-  drawScaledIP(x+sp*1.5,y,0.65,drawLemonNingningIP);
+  let sp=36,sc=0.5;
+  drawScaledIP(x-sp*1.5,y,sc,drawLemonKarinaIP);
+  drawScaledIP(x-sp*0.5,y,sc,drawLemonGiselleIP);
+  drawScaledIP(x+sp*0.5,y,sc,drawLemonWinterIP);
+  drawScaledIP(x+sp*1.5,y,sc,drawLemonNingningIP);
 }
 
 function drawUFO(x,y){
@@ -403,9 +430,9 @@ function drawUFO(x,y){
     if(id==='giselle') return drawGiselleIP(x,y);
     if(id==='winter') return drawWinterIP(x,y);
     if(id==='ningning') return drawNingningIP(x,y);
-    if(id==='ae') return drawAeRow(x,y);
-    if(id==='kwangya') return drawColorRow(x,y);
-    if(id==='lemon') return drawLemonRow(x,y);
+    if(id==='ae') return drawAeRow(W/2,y);
+    if(id==='kwangya') return drawColorRow(W/2,y);
+    if(id==='lemon') return drawLemonRow(W/2,y);
   }
   // 一般模式 — 原版外星人UFO
   pr(x-10,y-18,20,16,'#22aa22');
@@ -1402,7 +1429,7 @@ function showRecords(){
       <div class="record-row"><span class="record-name">最佳紀錄</span><span class="record-score">${bestScore} pts</span></div>
       <div class="record-section" style="margin-top:14px">── 挑戰日紀錄 ──</div>
       ${rows}
-      <div style="margin-top:16px;text-align:center"><button id="btnBack3" class="ov-btn rec">← 返回</button></div>
+      <div style="margin-top:16px"><button id="btnBack3" class="ov-btn rec" style="width:100%;padding:13px 0">← 返回</button></div>
     </div>`;
   ov.style.display='flex';
   document.getElementById('btnBack3').onclick=()=>showMainMenu();
