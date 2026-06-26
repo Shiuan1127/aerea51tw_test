@@ -329,6 +329,7 @@ function initGame(){
   eggAllCollected=false;eggFinalDone=false;eggFinalKills=0;eggAnyKillAfter=0;
   eggMsg='';eggMsgTimer=0;eggFlash='';eggFlashTimer=0;
   topEdgeTimer=0;topEggDone=false;secretModeActive=false;
+  lastLemonThreshold=0;lastMambaThreshold=0;
   ship={x:W/2,y:H-80,tx:W/2,ty:H-80};
   bullets=[];enemies=[];bossBullets=[];particles=[];powerups=[];
   stars=Array.from({length:70},()=>({x:Math.floor(Math.random()*W/P)*P,y:Math.floor(Math.random()*H/P)*P,s:Math.random()<0.25?2:1,sp:Math.random()*0.55+0.2,ph:(Math.random()*30)|0}));
@@ -336,12 +337,15 @@ function initGame(){
 
 function spawnEnemy(){
   let lv=Math.floor(fr/700);
-  let pool=['heart','moon','star','butterfly','snake','snake'];
-  let t=pool[Math.floor(Math.random()*pool.length)];
+  // heart 23% / moon 23% / star 23% / butterfly 23% / snake 8%
+  let rand=Math.random()*100;
+  let t=rand<23?'heart':rand<46?'moon':rand<69?'star':rand<92?'butterfly':'snake';
   let r=t==='snake'?10:t==='star'?15+lv:11+lv;
   let hp=t==='snake'?2+lv:t==='star'?2+lv:1;
   enemies.push({x:r+Math.floor(Math.random()*(W-r*2)/P)*P,y:-r*3,vx:(Math.random()-0.5)*1.8,vy:0.8+Math.random()*1.1+lv*0.12,r,type:t,hp,maxHp:hp,rot:0,rotSpeed:(Math.random()-0.5)*0.04,hit:0,coins:t==='snake'?3:1});
 }
+// 記錄上次召喚檸檬王和黑曼巴時的門檻
+let lastLemonThreshold=0, lastMambaThreshold=0;
 function spawnLemonBoss(){lemonBossActive=true;lemonBoss={x:W/2,y:-70,tx:W/2+80,r:55,hp:40,maxHp:40,hit:0,shootTimer:0,shotPhase:0};}
 function spawnMamba(){mambaActive=true;mamba={x:W/2,y:-60,r:30,hp:80,maxHp:80,hit:0,shootTimer:0,angle:Math.PI/2,vx:1.2};}
 
@@ -440,9 +444,18 @@ function loop(){
   cx.fillStyle='#000010';cx.fillRect(0,0,W,H);
   stars.forEach(s=>{s.y+=s.sp;if(s.y>H)s.y=0;cx.fillStyle=(fr+s.ph)%26<13?'#ffffff':'#3333aa';cx.fillRect(snap(s.x),snap(s.y),s.s*P,s.s*P);});
 
-  if(!lemonBossActive&&score>=200)spawnLemonBoss();
-  if(!mambaActive&&score>=2000)spawnMamba();
-  spawnTimer++;if(spawnTimer>=spawnIv&&!mambaActive){spawnEnemy();spawnTimer=0;if(fr>400)spawnIv=Math.max(38,spawnIv-1);}
+  // 檸檬王：每滿500分召喚一次（500, 1000, 1500...）
+  let lemonThresh=Math.floor(score/500)*500;
+  if(lemonThresh>0&&lemonThresh>lastLemonThreshold&&!lemonBossActive){
+    lastLemonThreshold=lemonThresh;spawnLemonBoss();
+  }
+  // 黑曼巴：每滿2000分召喚一次（2000, 4000, 6000...）
+  let mambaThresh=Math.floor(score/2000)*2000;
+  if(mambaThresh>0&&mambaThresh>lastMambaThreshold&&!mambaActive){
+    lastMambaThreshold=mambaThresh;spawnMamba();
+  }
+  // 小怪持續生成（不再受黑曼巴影響）
+  spawnTimer++;if(spawnTimer>=spawnIv){spawnEnemy();spawnTimer=0;if(fr>400)spawnIv=Math.max(38,spawnIv-1);}
 
   ship.x+=(ship.tx-ship.x)*0.14;ship.y+=(ship.ty-ship.y)*0.14;
   ship.x=Math.max(22,Math.min(W-22,ship.x));
