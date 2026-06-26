@@ -322,104 +322,55 @@ function drawMiniCat(x,y,bodyCol,earCol,faceCol,eyeCol,noseCol,tongueCol){
 
 // 小白圓（MY）
 // ── 共用：一排小貓（含底盤）─────────────────────────────
-function drawMiniCatOnDisk(x,y,bodyCol,earCol,faceCol,eyeCol,noseCol,tongueCol,glowCol){
-  // 小型底盤
-  pr(x-18,y+8,36,5,'#223355'); pr(x-20,y+10,40,4,'#2244aa'); pr(x-16,y+13,32,3,'#1a2288');
-  let lc=['#00ffff','#ffff44','#00ffff'];
-  for(let i=0;i<3;i++) pr(x-8+i*8,y+9,4,3,lc[i]);
-  pr(x-12,y+2,24,6,'#334466'); pr(x-14,y+3,28,5,'#3355aa');
-  // 引擎
-  let ef=fr%10<5;
-  pr(x-2,y+16,5,ef?7:5,glowCol||'#00ff88');
-  pr(x-1,y+16,3,ef?5:4,'#aaffcc');
-  // 圓形身體（縮小版 r=13）
-  let r=13;
-  for(let px2=-r;px2<=r;px2+=P)
-    for(let py2=-r;py2<=r;py2+=P)
-      if(px2*px2+py2*py2<=r*r){cx.fillStyle=bodyCol;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
-  // 臉
-  for(let px2=-8;px2<=8;px2+=P)
-    for(let py2=-8;py2<=8;py2+=P)
-      if(px2*px2*1.1+py2*py2<=8*8){cx.fillStyle=faceCol;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
-  // 耳
-  pr(x-13,y-10,6,6,earCol); pr(x-11,y-9,4,5,bodyCol);
-  pr(x+7,y-10,6,6,earCol);  pr(x+8,y-9,4,5,bodyCol);
-  // 觸角
-  pr(x-3,y-14,2,4,eyeCol); pr(x+1,y-14,2,4,eyeCol);
-  pr(x-5,y-14,3,3,eyeCol); pr(x+2,y-14,3,3,eyeCol);
-  // 品紅眉毛
-  pr(x-9,y-12,5,2,'#ff44aa'); pr(x+4,y-12,5,2,'#ff44aa');
-  // X眼
-  pr(x-7,y-8,2,2,eyeCol); pr(x-5,y-6,2,2,eyeCol);
-  pr(x-7,y-6,2,2,eyeCol); pr(x-5,y-8,2,2,eyeCol);
-  pr(x+3,y-8,2,2,eyeCol); pr(x+5,y-6,2,2,eyeCol);
-  pr(x+3,y-6,2,2,eyeCol); pr(x+5,y-8,2,2,eyeCol);
-  // 鼻
-  pr(x-1,y-2,2,2,noseCol);
-  // 嘴+舌
-  pr(x-2,y,4,2,eyeCol);
-  pr(x-1,y+2,2,3,tongueCol);
+// ── 縮放版 IP（canvas scale 縮小大版 IP）──────────────────
+function drawScaledIP(x,y,scale,drawFn){
+  cx.save();
+  cx.translate(snap(x),snap(y));
+  cx.scale(scale,scale);
+  drawFn(0,0);
+  cx.restore();
 }
 
-// ── Be my æ Day：四小隻原色一排，中間插原版外星飛碟(MY) ──
+// Lemon版各成員IP（黃色系）
+function drawLemonKarinaIP(x,y){
+  drawCatIP(x,y,'#eedd88','#ccbb44','#fffff0','#886600','#aa9900','#ddcc00','#ffdd00');
+}
+function drawLemonGiselleIP(x,y){
+  drawCatIP(x,y,'#e8d870','#bbaa33','#fffff0','#886600','#aa9900','#ddcc00','#ffdd00');
+}
+function drawLemonWinterIP(x,y){
+  drawCatIP(x,y,'#f5eeaa','#ddcc55','#fffff8','#886600','#aa9900','#ddcc00','#ffee44');
+}
+function drawLemonNingningIP(x,y){
+  drawCatIP(x,y,'#ddd060','#bbaa22','#fffff0','#886600','#aa9900','#ddcc00','#ffcc00');
+}
+
+// ── Be my æ Day：四小隻原色 + 中間迷你UFO ─────────────────
 function drawAeRow(x,y){
-  // 間距：四隻 + 1個UFO，共5個，以x為中心
   let sp=46;
-  let positions=[-sp*2,-sp,0,sp,sp*2];
-  // 位置0,1 = Karina,Giselle；位置2 = MY(UFO)；位置3,4 = Winter,Ningning
-  drawMiniCatOnDisk(x+positions[0],y,'#a8bcd4','#7a9bbf','#d8e8f8','#3a5a7a','#5a7a9a','#aacce8','#aaddff');
-  drawMiniCatOnDisk(x+positions[1],y,'#7a7a8a','#555566','#ccccdd','#334455','#445566','#9999aa','#aaaacc');
-  // 中間：原版外星人UFO縮小版（代表MY）
-  drawMiniUFO(x+positions[2],y);
-  drawMiniCatOnDisk(x+positions[3],y,'#e8eef8','#b8c8e0','#ffffff','#4466aa','#6688bb','#bbccee','#88aaff');
-  drawMiniCatOnDisk(x+positions[4],y,'#c088e0','#9966bb','#ead8f8','#6633aa','#8844bb','#cc88ee','#dd88ff');
-}
-
-// ── 縮小版原版UFO（MY代表）──────────────────────────────
-function drawMiniUFO(x,y){
-  // 縮小版外星人+飛碟（約原版0.65倍）
-  const S=0.65;
-  function rp(rx,ry,rw,rh,c){pr(x+rx*S,y+ry*S,Math.max(P,rw*S),Math.max(P,rh*S),c);}
-  // 身體
-  rp(-10,0,5,9,'#009933'); rp(4,0,5,9,'#009933');
-  rp(-8,-22,16,24,'#44cc44'); rp(-11,-15,22,14,'#44cc44');
-  rp(-6,-13,5,5,'#66ee66'); rp(-3,-9,3,3,'#44cc44');
-  // 眼
-  rp(-11,-19,9,11,'#ffff00'); rp(2,-19,9,11,'#ffff00');
-  rp(-10,-18,7,9,'#ff8800'); rp(3,-18,7,9,'#ff8800');
-  rp(-9,-17,5,7,'#111100'); rp(4,-17,5,7,'#111100');
-  rp(-8,-16,3,3,'#fff');    rp(5,-16,3,3,'#fff');
-  // 眉
-  rp(-13,-22,9,3,'#ff44aa'); rp(4,-22,9,3,'#ff44aa');
-  // 嘴
-  rp(-4,-7,8,3,'#ff2200');
-  // 飛碟底盤
-  rp(-18,8,36,5,'#223355'); rp(-20,10,40,4,'#2244aa'); rp(-16,13,32,3,'#1a2288');
-  rp(-12,2,24,6,'#334466'); rp(-14,3,28,5,'#3355aa');
-  let lc2=['#00ffff','#ffff44','#00ffff'];
-  for(let i=0;i<3;i++) pr(x+(-8+i*8)*S,y+9*S,4,3,lc2[i]);
-  // 引擎
-  let ef=fr%10<5;
-  pr(x-2,y+16,5,ef?7:5,'#00ff88'); pr(x-1,y+16,3,ef?5:4,'#aaffcc');
+  drawScaledIP(x-sp*2,y,0.65,drawKarinaIP);
+  drawScaledIP(x-sp,  y,0.65,drawGiselleIP);
+  drawMiniUFO(x,y);
+  drawScaledIP(x+sp,  y,0.65,drawWinterIP);
+  drawScaledIP(x+sp*2,y,0.65,drawNingningIP);
 }
 
 // ── kwangya日：四小隻彩色一排 ───────────────────────────
 function drawColorRow(x,y){
   let sp=52;
-  drawMiniCatOnDisk(x-sp*1.5,y,'#a8bcd4','#7a9bbf','#d8e8f8','#3a5a7a','#5a7a9a','#aacce8','#aaddff');
-  drawMiniCatOnDisk(x-sp*0.5,y,'#7a7a8a','#555566','#ccccdd','#334455','#445566','#9999aa','#aaaacc');
-  drawMiniCatOnDisk(x+sp*0.5,y,'#e8eef8','#b8c8e0','#ffffff','#4466aa','#6688bb','#bbccee','#88aaff');
-  drawMiniCatOnDisk(x+sp*1.5,y,'#c088e0','#9966bb','#ead8f8','#6633aa','#8844bb','#cc88ee','#dd88ff');
+  drawScaledIP(x-sp*1.5,y,0.65,drawKarinaIP);
+  drawScaledIP(x-sp*0.5,y,0.65,drawGiselleIP);
+  drawScaledIP(x+sp*0.5,y,0.65,drawWinterIP);
+  drawScaledIP(x+sp*1.5,y,0.65,drawNingningIP);
 }
 
-// ── Lemon Day：四小隻黃色一排 ───────────────────────────
+// ── Lemon Day：四小隻黃色檸檬版一排 ────────────────────────
 function drawLemonRow(x,y){
   let sp=52;
-  let lyc='#eedd88',lec='#ccbb44',lfc='#fffff0',lic='#886600',lnc='#aa9900',ltc='#ddcc00';
-  drawMiniCatOnDisk(x-sp*1.5,y,lyc,lec,lfc,lic,lnc,ltc,'#ffdd00');
-  drawMiniCatOnDisk(x-sp*0.5,y,lyc,lec,lfc,lic,lnc,ltc,'#ffdd00');
-  drawMiniCatOnDisk(x+sp*0.5,y,lyc,lec,lfc,lic,lnc,ltc,'#ffdd00');
-  drawMiniCatOnDisk(x+sp*1.5,y,lyc,lec,lfc,lic,lnc,ltc,'#ffdd00');
+  drawScaledIP(x-sp*1.5,y,0.65,drawLemonKarinaIP);
+  drawScaledIP(x-sp*0.5,y,0.65,drawLemonGiselleIP);
+  drawScaledIP(x+sp*0.5,y,0.65,drawLemonWinterIP);
+  drawScaledIP(x+sp*1.5,y,0.65,drawLemonNingningIP);
 }
 
 function drawUFO(x,y){
@@ -598,42 +549,42 @@ function drawDragonfly(x,y,rot,r,hit){ // Giselle日蜻蜓
   pr(-4,-r*0.6,3,3,'#ffff00');pr(1,-r*0.6,3,3,'#ffff00');
   cx.restore();
 }
-function drawYam(x,y,r,hit){ // Winter日烤地瓜（橘皮+黃色內肉，無表情，胖版）
-  let skin=hit?'#fff':'#dd6622', inner=hit?'#ffe':'#f5cc00', shine=hit?'#fff':'#ffe88a';
-  let skind=hit?'#aaa':'#aa4411', innerd=hit?'#ccc':'#cc9900';
-  // 橘色外皮（更胖：寬1.35 高1.1）
-  for(let px2=-(r*1.35|0);px2<=(r*1.35|0);px2+=P)
-    for(let py2=-(r*1.1|0);py2<=(r*1.1|0);py2+=P){
-      let nx=px2/(r*1.35), ny=py2/(r*1.1);
+function drawYam(x,y,r,hit){
+  let skin=hit?'#fff':'#774466', skind=hit?'#bbb':'#552244', skinl=hit?'#fff':'#997788';
+  let inner=hit?'#ffe':'#f5e090', innerd=hit?'#ccc':'#d4a820';
+  // 橫長橢圓外皮（寬1.7 高0.9，像圖一那種胖長地瓜）
+  for(let px2=-(r*1.7|0);px2<=(r*1.7|0);px2+=P)
+    for(let py2=-(r*0.9|0);py2<=(r*0.9|0);py2+=P){
+      let nx=px2/(r*1.7),ny=py2/(r*0.9);
       if(nx*nx+ny*ny<=1){cx.fillStyle=skin;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
     }
-  // 橘皮高光
-  pr(x-r*0.5,y-r*0.8,r*0.3,r*0.3,skind);
-  // 黃色內肉（上半部溢出，寬1.2）
-  for(let px2=-(r*1.2|0);px2<=(r*1.2|0);px2+=P)
-    for(let py2=-(r*1.2|0);py2<=0;py2+=P){
-      let nx=px2/(r*1.2), ny=(py2+r*0.3)/(r*0.95);
-      if(nx*nx+ny*ny<=1){cx.fillStyle=inner;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
+  // 外皮細紋（橫向深色線）
+  pr(x-r*1.1,y-r*0.2,r*0.3,2,skind); pr(x-r*0.3,y+r*0.3,r*0.25,2,skind);
+  pr(x+r*0.4,y-r*0.35,r*0.3,2,skind); pr(x+r*0.9,y+r*0.1,r*0.25,2,skind);
+  // 外皮高光（左上）
+  pr(x-r*0.9,y-r*0.55,r*0.4,r*0.15,skinl);
+  // 切面（中間偏左，米黃色橢圓）
+  let cx2=x-r*0.1, cy2=y;
+  for(let px2=-(r*0.75|0);px2<=(r*0.75|0);px2+=P)
+    for(let py2=-(r*0.75|0);py2<=(r*0.75|0);py2+=P){
+      let nx=px2/(r*0.75),ny=py2/(r*0.75);
+      if(nx*nx+ny*ny<=1){cx.fillStyle=inner;cx.fillRect(snap(cx2+px2),snap(cy2+py2),P,P);}
     }
-  // 黃色上端尖頭
-  pr(x-4,y-r*1.1-5,8,7,inner);
-  pr(x-2,y-r*1.1-9,4,6,inner);
-  pr(x-1,y-r*1.1-11,3,3,innerd);
-  // 黃色高光
-  pr(x+r*0.3,y-r*0.8,r*0.22,r*0.28,shine);
-  pr(x-r*0.7,y-r*0.65,r*0.15,r*0.2,shine);
-  // 剝開邊緣（橘皮撕裂線）
-  pr(x-r*1.2,y-r*0.05,r*2.4,3,skind);
-  // 橘皮紋路（下方）
-  pr(x-r*0.55,y+r*0.25,2,r*0.45,skind);
-  pr(x+r*0.2,y+r*0.2,2,r*0.5,skind);
-  pr(x+r*0.7,y+r*0.3,2,r*0.35,skind);
-  // 靜電（拔絲！）
+  // 切面高光（左上米白）
+  pr(cx2-r*0.4,cy2-r*0.4,r*0.35,r*0.25,'#fffff0');
+  pr(cx2-r*0.3,cy2-r*0.3,r*0.2,r*0.15,'#ffffff');
+  // 切面紋路（深色線模擬纖維）
+  pr(cx2-r*0.3,cy2+r*0.1,r*0.6,2,innerd); pr(cx2-r*0.1,cy2+r*0.3,r*0.4,2,innerd);
+  pr(cx2-r*0.4,cy2-r*0.2,r*0.25,2,innerd);
+  // 兩端尖頭
+  pr(x-r*1.7,y-3,6,6,skind); pr(x-r*1.7+3,y-1,3,3,skind);
+  pr(x+r*1.65,y-2,5,5,skind);
+  // 靜電（拔絲！Winter特有）
   if(fr%14<7){
     cx.strokeStyle='#ffffaa';cx.lineWidth=1;
-    cx.beginPath();cx.moveTo(snap(x-r*1.2),snap(y-r*0.5));cx.lineTo(snap(x-r*1.4),snap(y-r*0.8));cx.stroke();
-    cx.beginPath();cx.moveTo(snap(x+r*1.2),snap(y-r*0.4));cx.lineTo(snap(x+r*1.4),snap(y-r*0.7));cx.stroke();
-    pr(x-r*1.45,y-r*0.85,3,3,'#ffffaa'); pr(x+r*1.35,y-r*0.75,3,3,'#ffffaa');
+    cx.beginPath();cx.moveTo(snap(x-r*1.5),snap(y-r*0.5));cx.lineTo(snap(x-r*1.7),snap(y-r*0.8));cx.stroke();
+    cx.beginPath();cx.moveTo(snap(x+r*1.3),snap(y-r*0.3));cx.lineTo(snap(x+r*1.5),snap(y-r*0.6));cx.stroke();
+    pr(x-r*1.75,y-r*0.85,3,3,'#ffffaa'); pr(x+r*1.45,y-r*0.65,3,3,'#ffffaa');
   }
 }
 function drawNote(x,y,r,rot,hit){ // Ningning日音符
@@ -1169,29 +1120,31 @@ function loop(){
   });
 
   powerups=powerups.filter(p=>{
-    p.y+=p.vy;drawPickup(p);
+    p.y+=p.vy;
+    // bullet 增強劑：自動收集，不需靠近
+    if(p.type==='bullet'){
+      if(bulletLevel<4){
+        bulletExp++;
+        if(bulletExp>=(bulletExpNeeded[bulletLevel]||5)){
+          bulletExp=0; bulletLevel++;
+          spawnParticles(p.x,p.y,'#00ffcc',16);
+        } else {
+          spawnParticles(p.x,p.y,'#00ff88',4);
+        }
+      }
+      return false; // 立刻消失，不顯示不等撿
+    }
+    drawPickup(p);
     let dx=p.x-ship.x,dy=p.y-ship.y;
     if(Math.sqrt(dx*dx+dy*dy)<22){
       if(p.type==='hp'){lives=Math.min(9,lives+1);spawnParticles(ship.x,ship.y,'#00ff44',12);}
       else if(p.type==='super'){
         if(bulletLevel>=4){
-          // 雷射等級 → 掃空模式，自動清場3次
           sweepMode=180; sweepCount=3;
           spawnParticles(ship.x,ship.y,'#ff4444',24);
         } else {
           superMode=600;
           spawnParticles(ship.x,ship.y,'#ffff00',20);
-        }
-      }
-      else if(p.type==='bullet'){
-        if(bulletLevel<4){
-          bulletExp++;
-          if(bulletExp>=(bulletExpNeeded[bulletLevel]||5)){
-            bulletExp=0; bulletLevel++;
-            spawnParticles(ship.x,ship.y,'#00ffcc',16);
-          } else {
-            spawnParticles(ship.x,ship.y,'#00ff88',6);
-          }
         }
       }
       return false;
