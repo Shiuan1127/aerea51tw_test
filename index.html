@@ -344,14 +344,21 @@ function drawMiniCatOnDisk(x,y,bodyCol,earCol,faceCol,eyeCol,noseCol,tongueCol,g
   // 耳
   pr(x-13,y-10,6,6,earCol); pr(x-11,y-9,4,5,bodyCol);
   pr(x+7,y-10,6,6,earCol);  pr(x+8,y-9,4,5,bodyCol);
-  // X眼+舌
-  pr(x-7,y-5,2,2,eyeCol); pr(x-5,y-3,2,2,eyeCol);
-  pr(x-7,y-3,2,2,eyeCol); pr(x-5,y-5,2,2,eyeCol);
-  pr(x+3,y-5,2,2,eyeCol); pr(x+5,y-3,2,2,eyeCol);
-  pr(x+3,y-3,2,2,eyeCol); pr(x+5,y-5,2,2,eyeCol);
-  pr(x-1,y+1,2,2,noseCol);
-  pr(x-2,y+3,4,2,eyeCol);
-  pr(x-1,y+4,2,3,tongueCol);
+  // 觸角
+  pr(x-3,y-14,2,4,eyeCol); pr(x+1,y-14,2,4,eyeCol);
+  pr(x-5,y-14,3,3,eyeCol); pr(x+2,y-14,3,3,eyeCol);
+  // 品紅眉毛
+  pr(x-9,y-12,5,2,'#ff44aa'); pr(x+4,y-12,5,2,'#ff44aa');
+  // X眼
+  pr(x-7,y-8,2,2,eyeCol); pr(x-5,y-6,2,2,eyeCol);
+  pr(x-7,y-6,2,2,eyeCol); pr(x-5,y-8,2,2,eyeCol);
+  pr(x+3,y-8,2,2,eyeCol); pr(x+5,y-6,2,2,eyeCol);
+  pr(x+3,y-6,2,2,eyeCol); pr(x+5,y-8,2,2,eyeCol);
+  // 鼻
+  pr(x-1,y-2,2,2,noseCol);
+  // 嘴+舌
+  pr(x-2,y,4,2,eyeCol);
+  pr(x-1,y+2,2,3,tongueCol);
 }
 
 // ── Be my æ Day：四小隻原色一排，中間插原版外星飛碟(MY) ──
@@ -591,51 +598,42 @@ function drawDragonfly(x,y,rot,r,hit){ // Giselle日蜻蜓
   pr(-4,-r*0.6,3,3,'#ffff00');pr(1,-r*0.6,3,3,'#ffff00');
   cx.restore();
 }
-function drawYam(x,y,r,hit){ // Winter日烤地瓜（參照圖：橘皮+黃色內肉+可愛臉）
+function drawYam(x,y,r,hit){ // Winter日烤地瓜（橘皮+黃色內肉，無表情，胖版）
   let skin=hit?'#fff':'#dd6622', inner=hit?'#ffe':'#f5cc00', shine=hit?'#fff':'#ffe88a';
   let skind=hit?'#aaa':'#aa4411', innerd=hit?'#ccc':'#cc9900';
-  // 橘色外皮（橢圓，較高）
-  for(let px2=-(r*0.85|0);px2<=(r*0.85|0);px2+=P)
+  // 橘色外皮（更胖：寬1.35 高1.1）
+  for(let px2=-(r*1.35|0);px2<=(r*1.35|0);px2+=P)
     for(let py2=-(r*1.1|0);py2<=(r*1.1|0);py2+=P){
-      let nx=px2/(r*0.85), ny=py2/(r*1.1);
+      let nx=px2/(r*1.35), ny=py2/(r*1.1);
       if(nx*nx+ny*ny<=1){cx.fillStyle=skin;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
     }
   // 橘皮高光
-  pr(x-r*0.3,y-r*0.8,r*0.25,r*0.3,skind);
-  // 黃色內肉（上半部溢出，像剝開的烤地瓜）
-  for(let px2=-(r*0.75|0);px2<=(r*0.75|0);px2+=P)
-    for(let py2=-(r*1.15|0);py2<=0;py2+=P){
-      let nx=px2/(r*0.75), ny=(py2+r*0.3)/(r*0.9);
+  pr(x-r*0.5,y-r*0.8,r*0.3,r*0.3,skind);
+  // 黃色內肉（上半部溢出，寬1.2）
+  for(let px2=-(r*1.2|0);px2<=(r*1.2|0);px2+=P)
+    for(let py2=-(r*1.2|0);py2<=0;py2+=P){
+      let nx=px2/(r*1.2), ny=(py2+r*0.3)/(r*0.95);
       if(nx*nx+ny*ny<=1){cx.fillStyle=inner;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
     }
-  // 黃色上端尖頭（參照圖片）
-  pr(x-3,y-r*1.1-5,6,7,inner);
-  pr(x-1,y-r*1.1-9,3,6,inner);
-  pr(x,y-r*1.1-11,2,3,innerd);
+  // 黃色上端尖頭
+  pr(x-4,y-r*1.1-5,8,7,inner);
+  pr(x-2,y-r*1.1-9,4,6,inner);
+  pr(x-1,y-r*1.1-11,3,3,innerd);
   // 黃色高光
-  pr(x+r*0.2,y-r*0.8,r*0.2,r*0.25,shine);
-  // 可愛臉（在黃色區）
-  cx.fillStyle=hit?'#555':'#222222';
-  cx.beginPath();cx.arc(snap(x-5),snap(y-r*0.4),3,0,Math.PI*2);cx.fill();
-  cx.beginPath();cx.arc(snap(x+5),snap(y-r*0.4),3,0,Math.PI*2);cx.fill();
-  cx.beginPath();cx.arc(snap(x-5),snap(y-r*0.4),1.5,0,Math.PI*2);cx.fillStyle='#fff';cx.fill();
-  cx.beginPath();cx.arc(snap(x+5),snap(y-r*0.4),1.5,0,Math.PI*2);cx.fill();
-  // 腮紅
-  pr(x-8,y-r*0.25,4,3,'#ff9988');pr(x+4,y-r*0.25,4,3,'#ff9988');
-  // 笑嘴
-  cx.strokeStyle=hit?'#555':'#333'; cx.lineWidth=1.5;
-  cx.beginPath();cx.arc(snap(x),snap(y-r*0.15),4,0.2,Math.PI-0.2);cx.stroke();
+  pr(x+r*0.3,y-r*0.8,r*0.22,r*0.28,shine);
+  pr(x-r*0.7,y-r*0.65,r*0.15,r*0.2,shine);
   // 剝開邊緣（橘皮撕裂線）
-  pr(x-r*0.75,y-r*0.05,r*1.5,3,skind);
+  pr(x-r*1.2,y-r*0.05,r*2.4,3,skind);
   // 橘皮紋路（下方）
-  pr(x-r*0.4,y+r*0.3,2,r*0.4,skind);
-  pr(x+r*0.1,y+r*0.25,2,r*0.45,skind);
+  pr(x-r*0.55,y+r*0.25,2,r*0.45,skind);
+  pr(x+r*0.2,y+r*0.2,2,r*0.5,skind);
+  pr(x+r*0.7,y+r*0.3,2,r*0.35,skind);
   // 靜電（拔絲！）
   if(fr%14<7){
     cx.strokeStyle='#ffffaa';cx.lineWidth=1;
-    cx.beginPath();cx.moveTo(snap(x-r*0.9),snap(y-r*0.5));cx.lineTo(snap(x-r*1.1),snap(y-r*0.8));cx.stroke();
-    cx.beginPath();cx.moveTo(snap(x+r*0.9),snap(y-r*0.4));cx.lineTo(snap(x+r*1.1),snap(y-r*0.7));cx.stroke();
-    pr(x-r*1.15,y-r*0.85,3,3,'#ffffaa');pr(x+r*1.05,y-r*0.75,3,3,'#ffffaa');
+    cx.beginPath();cx.moveTo(snap(x-r*1.2),snap(y-r*0.5));cx.lineTo(snap(x-r*1.4),snap(y-r*0.8));cx.stroke();
+    cx.beginPath();cx.moveTo(snap(x+r*1.2),snap(y-r*0.4));cx.lineTo(snap(x+r*1.4),snap(y-r*0.7));cx.stroke();
+    pr(x-r*1.45,y-r*0.85,3,3,'#ffffaa'); pr(x+r*1.35,y-r*0.75,3,3,'#ffffaa');
   }
 }
 function drawNote(x,y,r,rot,hit){ // Ningning日音符
