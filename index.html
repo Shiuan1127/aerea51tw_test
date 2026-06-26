@@ -237,7 +237,146 @@ function hud(){
   }
 }
 
+// ── IP 飛碟造型（參照圖一貓咪臉造型）────────────────────
+// 共用：圓頭貓咪臉底盤 + 個性化顏色/表情
+function drawCatIP(x,y,bodyCol,earCol,faceCol,drawFace,glowCol){
+  // 底盤（碟形）
+  pr(x-30,y+8,60,6,'#223355');pr(x-32,y+10,64,5,'#2244aa');pr(x-28,y+13,56,4,'#1a2288');
+  let lc=['#00ffff','#ffff00','#00ffff','#ff44ff','#00ffff'];
+  for(let i=0;i<5;i++){pr(x-18+i*9,y+9,5,4,lc[i]);}
+  pr(x-18,y+2,36,7,'#334466');pr(x-20,y+3,40,6,'#3355aa');
+  // 圓形身體
+  for(let px2=-18;px2<=18;px2+=P)
+    for(let py2=-18;py2<=18;py2+=P)
+      if(px2*px2+py2*py2<=18*18){cx.fillStyle=bodyCol;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
+  // 臉部（白/淡色橢圓）
+  for(let px2=-11;px2<=11;px2+=P)
+    for(let py2=-11;py2<=11;py2+=P)
+      if(px2*px2*1.1+py2*py2<=11*11){cx.fillStyle=faceCol;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
+  // 耳朵
+  pr(x-18,y-14,8,8,earCol);pr(x-16,y-12,5,6,bodyCol);
+  pr(x+10,y-14,8,8,earCol);pr(x+11,y-12,5,6,bodyCol);
+  // 表情回調
+  drawFace(x,y);
+  // 引擎
+  let ef=fr%10<5;
+  pr(x-3,y+17,6,ef?8:6,glowCol||'#00ff88');
+  pr(x-2,y+17,4,ef?6:4,'#aaffcc');
+  pr(x-1,y+17,2,ef?4:3,'#ffffff');
+  if(superMode>0&&fr%6<3){cx.strokeStyle='#ffff00';cx.lineWidth=2;cx.strokeRect(snap(x-34),snap(y-22),68,44);}
+}
+
+// Karina IP — 藍灰色身體，沉穩眼神，髮旋
+function drawKarinaIP(x,y){
+  drawCatIP(x,y,'#aabbdd','#8899bb','#ddeeff',(x,y)=>{
+    pr(x-2,y-14,4,4,'#8899bb'); // 髮旋
+    pr(x-3,y-13,2,2,'#8899bb');
+    pr(x-6,y-4,4,5,'#334466');pr(x+2,y-4,4,5,'#334466'); // 眼
+    pr(x-5,y-3,3,3,'#6688aa');pr(x+2,y-3,3,3,'#6688aa');
+    pr(x-4,y-2,2,2,'#fff');pr(x+3,y-2,2,2,'#fff');
+    pr(x-3,y+3,2,2,'#334466');pr(x+1,y+3,2,2,'#334466'); // 鼻
+    pr(x-4,y+5,8,2,'#667799'); // 嘴
+  },'#aaddff');
+}
+
+// Giselle IP — 灰色身體，細長眼，貓鬍鬚
+function drawGiselleIP(x,y){
+  drawCatIP(x,y,'#888899','#666677','#ddddee',(x,y)=>{
+    pr(x-7,y-5,5,3,'#333344');pr(x+2,y-5,5,3,'#333344'); // 細眼
+    pr(x-6,y-4,4,2,'#555566');pr(x+2,y-4,4,2,'#555566');
+    pr(x-2,y-1,4,2,'#555566'); // 鼻
+    pr(x-3,y+2,2,2,'#888899');pr(x+1,y+2,2,2,'#888899');
+    pr(x-10,y+1,8,1,'#aaaaaa');pr(x+2,y+1,8,1,'#aaaaaa'); // 鬍鬚
+    pr(x-10,y+3,7,1,'#aaaaaa');pr(x+3,y+3,7,1,'#aaaaaa');
+  },'#aaaacc');
+}
+
+// Winter IP — 白色身體，圓大眼，小角（雪花感）
+function drawWinterIP(x,y){
+  drawCatIP(x,y,'#ddeeff','#bbccee','#ffffff',(x,y)=>{
+    cx.beginPath();cx.arc(snap(x-4),snap(y-3),5,0,Math.PI*2);cx.fillStyle='#8899bb';cx.fill();
+    cx.beginPath();cx.arc(snap(x+4),snap(y-3),5,0,Math.PI*2);cx.fillStyle='#8899bb';cx.fill();
+    cx.beginPath();cx.arc(snap(x-4),snap(y-3),3,0,Math.PI*2);cx.fillStyle='#334466';cx.fill();
+    cx.beginPath();cx.arc(snap(x+4),snap(y-3),3,0,Math.PI*2);cx.fillStyle='#334466';cx.fill();
+    pr(x-3,y-4,2,2,'#fff');pr(x+3,y-4,2,2,'#fff');
+    pr(x-2,y+2,4,2,'#aabbcc'); // 鼻嘴
+    pr(x-3,y+4,6,2,'#8899bb');
+    // 小角（Winter特徵）
+    pr(x-2,y-18,4,5,'#ddeeff');pr(x-1,y-21,2,4,'#ccdde');
+  },'#88aaff');
+}
+
+// Ningning IP — 紫色身體，X眼/吐舌，可愛感
+function drawNingningIP(x,y){
+  drawCatIP(x,y,'#cc99ee','#aa77cc','#eeddff',(x,y)=>{
+    // X眼
+    pr(x-8,y-6,3,3,'#7733aa');pr(x-6,y-4,3,3,'#7733aa');
+    pr(x-8,y-4,3,3,'#7733aa');pr(x-6,y-6,3,3,'#7733aa');
+    pr(x+3,y-6,3,3,'#7733aa');pr(x+5,y-4,3,3,'#7733aa');
+    pr(x+3,y-4,3,3,'#7733aa');pr(x+5,y-6,3,3,'#7733aa');
+    pr(x-1,y+1,2,2,'#aa77cc'); // 鼻
+    pr(x-3,y+3,6,3,'#cc88ee'); // 嘴
+    pr(x-1,y+4,2,3,'#ee88cc'); // 舌
+  },'#dd88ff');
+}
+
+// 四個IP並排（ae入侵日 / aespa日）
+function drawQuadIP(cx2,y){
+  let spacing=68;
+  let startX=W/2-spacing*1.5;
+  drawKarinaIP(startX,y);
+  drawGiselleIP(startX+spacing,y);
+  drawWinterIP(startX+spacing*2,y);
+  drawNingningIP(startX+spacing*3,y);
+}
+
+// Lemonade IP（黃色版四個並排）
+function drawLemonadeIP(cx2,y){
+  let spacing=68;
+  let startX=W/2-spacing*1.5;
+  let lemonFaces=[(x,y)=>{ // Karina lemon
+    pr(x-2,y-14,4,4,'#ccbb00');
+    pr(x-6,y-4,4,5,'#886600');pr(x+2,y-4,4,5,'#886600');
+    pr(x-5,y-3,3,3,'#aa9900');pr(x+2,y-3,3,3,'#aa9900');
+    pr(x-4,y-2,2,2,'#ffff88');pr(x+3,y-2,2,2,'#ffff88');
+    pr(x-4,y+5,8,2,'#aa9900');
+  },(x,y)=>{ // Giselle lemon
+    pr(x-7,y-5,5,3,'#886600');pr(x+2,y-5,5,3,'#886600');
+    pr(x-6,y-4,4,2,'#aa9900');pr(x+2,y-4,4,2,'#aa9900');
+    pr(x-2,y-1,4,2,'#aa9900');
+    pr(x-10,y+1,8,1,'#ccbb00');pr(x+2,y+1,8,1,'#ccbb00');
+  },(x,y)=>{ // Winter lemon
+    cx.beginPath();cx.arc(snap(x-4),snap(y-3),5,0,Math.PI*2);cx.fillStyle='#aa9900';cx.fill();
+    cx.beginPath();cx.arc(snap(x+4),snap(y-3),5,0,Math.PI*2);cx.fillStyle='#aa9900';cx.fill();
+    cx.beginPath();cx.arc(snap(x-4),snap(y-3),3,0,Math.PI*2);cx.fillStyle='#664400';cx.fill();
+    cx.beginPath();cx.arc(snap(x+4),snap(y-3),3,0,Math.PI*2);cx.fillStyle='#664400';cx.fill();
+    pr(x-3,y+4,6,2,'#aa9900');
+    pr(x-2,y-18,4,5,'#eedd00');
+  },(x,y)=>{ // Ningning lemon
+    pr(x-8,y-6,3,3,'#886600');pr(x-6,y-4,3,3,'#886600');
+    pr(x-8,y-4,3,3,'#886600');pr(x-6,y-6,3,3,'#886600');
+    pr(x+3,y-6,3,3,'#886600');pr(x+5,y-4,3,3,'#886600');
+    pr(x+3,y-4,3,3,'#886600');pr(x+5,y-6,3,3,'#886600');
+    pr(x-3,y+3,6,3,'#ccbb00');pr(x-1,y+4,2,3,'#ddcc00');
+  }];
+  for(let i=0;i<4;i++){
+    let lx=startX+spacing*i;
+    drawCatIP(lx,y,'#eedd88','#ccbb44','#fffff0',lemonFaces[i],'#eecc00');
+  }
+}
+
 function drawUFO(x,y){
+  // 依挑戰模式選擇飛碟/IP造型
+  if(challengeMode&&todayChallenge){
+    const id=todayChallenge.id;
+    if(id==='karina') return drawKarinaIP(x,y);
+    if(id==='giselle') return drawGiselleIP(x,y);
+    if(id==='winter') return drawWinterIP(x,y);
+    if(id==='ningning') return drawNingningIP(x,y);
+    if(id==='ae'||id==='kwangya') return drawQuadIP(cx,y);
+    if(id==='lemon') return drawLemonadeIP(cx,y);
+  }
+  // 一般模式 — 原版外星人UFO
   pr(x-10,y-18,20,16,'#22aa22');
   pr(x-12,y-14,24,11,'#33bb33');
   pr(x-8,y-22,16,6,'#22aa22');
@@ -999,14 +1138,6 @@ function loop(){
     cx.fillText(comboFlashMsg,W/2,H/2-20);
     cx.shadowBlur=0;cx.restore();
   }
-  // ── 連殺條（底部細條，顯示剩餘時間）──
-  if(combo>0&&comboTimer>0){
-    let pct=comboTimer/180;
-    let col=comboColors[comboMult-1]||'#ffff44';
-    cx.fillStyle='rgba(0,0,0,0.4)';cx.fillRect(0,H-34,W,4);
-    cx.fillStyle=col;cx.fillRect(0,H-34,W*pct,4);
-  }
-
   // ── 51分彩蛋 ──
   if(!eggScore51Done&&score>50){eggScore51Done=true;triggerFlash('aerea51tw','#00ffcc');}
 
@@ -1075,13 +1206,31 @@ function showMainMenu(extraHtml=''){
     <button id="btnRecord" class="ov-btn rec">📊 過往紀錄</button>`;
   ov.style.display='flex';
   document.getElementById('btnNormal').onclick=()=>{challengeMode=false;startGame();};
-  document.getElementById('btnChallenge').onclick=()=>showChallengeInfo();
+  document.getElementById('btnChallenge').onclick=()=>showChallengeSelect();
   document.getElementById('btnRecord').onclick=()=>showRecords();
   setupA51Click();
 }
 
-function showChallengeInfo(){
-  const day=getTodayChallenge();
+function showChallengeSelect(){
+  const ov=document.getElementById('ov');
+  const allOptions=[...CHALLENGE_DAYS,{id:'rest',name:'公休日（系統停機）',emoji:'📅'}];
+  let btns=allOptions.map(d=>`
+    <button class="ov-btn" style="width:300px;padding:9px 0;font-size:12px;letter-spacing:1px;margin-bottom:5px" data-id="${d.id}">
+      ${d.emoji} ${d.name}
+    </button>`).join('');
+  ov.innerHTML=`
+    <div style="font-family:'Courier New',monospace;text-align:center;color:#00ff88;font-size:13px;letter-spacing:2px;margin-bottom:12px">⚡ 選擇挑戰模式</div>
+    ${btns}
+    <button id="btnBack0" class="ov-btn rec" style="width:300px;margin-top:4px">← 返回</button>`;
+  ov.style.display='flex';
+  allOptions.forEach(d=>{
+    ov.querySelector(`[data-id="${d.id}"]`).onclick=()=>showChallengeInfo(d);
+  });
+  document.getElementById('btnBack0').onclick=()=>showMainMenu();
+}
+
+function showChallengeInfo(dayOverride){
+  const day=dayOverride||getTodayChallenge();
   const ov=document.getElementById('ov');
   if(day.id==='rest'){
     ov.innerHTML=`
