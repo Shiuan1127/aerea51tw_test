@@ -164,7 +164,8 @@ function saveChallengeRecord(id,s){
 let shakeTimer=0,superMode=0;
 let bulletLevel=0;
 let bulletExp=0;
-const bulletExpNeeded=[5,5,5,5];
+// LV0→LV1→...→LV9，共需升9次，每次需要的增強劑數量
+const bulletExpNeeded=[3,3,4,4,4,4,5,5,5];
 let sweepMode=0,sweepCount=0;
 // ── 連殺系統 ─────────────────────────────────────────────
 let combo=0;          // 目前連殺數
@@ -184,55 +185,77 @@ let secretModeActive=false,secretModeEverActive=false;
 let topEdgeTimer=0,topEggDone=false;
 
 function hud(){
-  cx.fillStyle='rgba(0,0,10,0.88)';cx.fillRect(0,0,W,28);
+  cx.fillStyle='rgba(0,0,10,0.88)';cx.fillRect(0,0,W,32);
   cx.font='bold 11px "Courier New"';
-  // 子彈等級進度條
-  let lvNames=['LV1','LV2','LV3','LV4','MAX'];
-  let lvColors=['#00ff88','#00ffcc','#ffdd00','#ff8800','#ff44ff'];
-  let lc=lvColors[bulletLevel]||'#00ff88';
-  cx.fillStyle=lc; cx.fillText(lvNames[bulletLevel],6,13);
-  // 進度條背景
-  let barX=36,barY=5,barW=80,barH=8;
-  cx.fillStyle='#223322'; cx.fillRect(barX,barY,barW,barH);
-  // 進度條填充
-  if(bulletLevel<4){
-    let pct=bulletExp/(bulletExpNeeded[bulletLevel]||5);
+  // ── 子彈等級視覺圖示（10級）──
+  const dispMap10=[
+    {w:4, h:10,col:'#00ff88', count:1},           // LV0 小1
+    {w:4, h:10,col:'#00ff88', count:3},           // LV1 小3
+    {w:6, h:14,col:'#00ffcc', count:1},           // LV2 中1
+    {w:6, h:14,col:'#00ffcc', count:3},           // LV3 中3
+    {w:8, h:18,col:'#ffdd00', count:1},           // LV4 大1
+    {w:8, h:18,col:'#ffdd00', count:3},           // LV5 大3
+    {w:11,h:22,col:'#ff8800', count:1},           // LV6 巨1
+    {w:11,h:22,col:'#ff8800', count:3},           // LV7 巨3
+    {w:2, h:22,col:'#88aaff', count:1,laser:true},// LV8 雷射（細）
+    {w:4, h:22,col:'#cc88ff', count:1,laser:true},// LV9 雷射（粗）MAX
+  ];
+  const lv=Math.min(bulletLevel,9);
+  const bs=dispMap10[lv];
+  let startX=5, iconY=27, gap=bs.w+2;
+  for(let i=0;i<bs.count;i++){
+    let bx=startX+i*(bs.w+gap);
+    cx.fillStyle=bs.col;
+    cx.fillRect(bx,iconY-bs.h,bs.w,bs.h);
+    cx.fillStyle='#ffffff';
+    cx.fillRect(bx,iconY-bs.h,bs.w>3?2:1,Math.round(bs.h*0.45));
+  }
+  if(bs.laser){
+    cx.globalAlpha=0.22;cx.fillStyle=bs.col;
+    for(let i=0;i<bs.count;i++){let bx=startX+i*(bs.w+gap);cx.fillRect(bx-2,iconY-bs.h-2,bs.w+4,bs.h+4);}
+    cx.globalAlpha=1;
+  }
+  const lvCols10=['#00ff88','#00ff88','#00ffcc','#00ffcc','#ffdd00','#ffdd00','#ff8800','#ff8800','#ff44ff','#ff88ff'];
+  let lc=lvCols10[lv];
+  let barX=startX+bs.count*(bs.w+gap)+4, barY=6, barW=58, barH=6;
+  cx.fillStyle='#112211'; cx.fillRect(barX,barY,barW,barH);
+  if(lv<9){
+    let pct=bulletExp/(bulletExpNeeded[lv]||5);
     cx.fillStyle=lc; cx.fillRect(barX,barY,Math.round(barW*pct),barH);
-    // 進度條邊框
     cx.strokeStyle=lc; cx.lineWidth=1; cx.strokeRect(barX,barY,barW,barH);
   } else {
-    // MAX 滿格閃爍
-    cx.fillStyle=fr%20<10?'#ff44ff':'#ffaaff';
-    cx.fillRect(barX,barY,barW,barH);
+    cx.fillStyle=fr%20<10?'#ff88ff':'#ffccff'; cx.fillRect(barX,barY,barW,barH);
+    cx.font='bold 7px "Courier New"';cx.fillStyle='#330033';cx.textAlign='center';
+    cx.fillText('MAX',barX+barW/2,barY+5);cx.textAlign='left';cx.font='bold 11px "Courier New"';
   }
-  cx.fillStyle=superMode>0||sweepMode>0?'#ffff00':'#00ffcc';
   cx.fillText('SCR:'+score,W/2-36,18);
-  // 連殺倍率顯示（分數旁）
   if(comboMult>1){
     let mc=['','','#ffff44','#ffaa00','#ff6600','#ff2200','#ff00ff'][Math.min(comboMult,6)];
     cx.fillStyle=mc||'#ff00ff';
     cx.fillText('×'+comboMult,W/2+38,18);
   }
   cx.fillStyle='#ff4488'; cx.fillText('HP:'+lives,W-54,18);
-  // 超級模式提示
   if(sweepMode>0){
-    cx.fillStyle='rgba(255,0,0,0.12)'; cx.fillRect(0,28,W,H-28);
+    cx.fillStyle='rgba(255,0,0,0.12)'; cx.fillRect(0,32,W,H-32);
     cx.font='bold 11px "Courier New"'; cx.fillStyle='#ff4444';
     cx.textAlign='center';
     cx.fillText('★ SUPER MODE — SWEEP ×'+sweepCount+' ★',W/2,H-8);
     cx.textAlign='left';
   } else if(superMode>0){
-    cx.fillStyle='rgba(255,220,0,0.10)'; cx.fillRect(0,28,W,H-28);
+    cx.fillStyle='rgba(255,220,0,0.10)'; cx.fillRect(0,32,W,H-32);
     cx.font='bold 11px "Courier New"'; cx.fillStyle='#ffee00';
     cx.textAlign='center';
     cx.fillText('★ SUPER MODE '+(Math.ceil(superMode/60))+'s ★',W/2,H-8);
     cx.textAlign='left';
   }
-  cx.font='bold 9px "Courier New"'; cx.fillStyle='#00cc66';
+  cx.font='bold 9px "Courier New"';
   if(challengeMode&&todayChallenge&&todayChallenge.hud){
     cx.fillStyle='#ffdd88';
-    cx.fillText(todayChallenge.hud,W/2-cx.measureText(todayChallenge.hud).width/2,H-20);
+    cx.textAlign='center';
+    cx.fillText(todayChallenge.hud,W/2,H-20);
+    cx.textAlign='left';
   } else {
+    cx.fillStyle='#00cc66';
     cx.fillText('AEREA51TW',W/2-34,H-20);
   }
 }
@@ -651,24 +674,63 @@ function drawSMBuilding(x,y,r,hit){ // Beat KWANGYA SM大樓
 }
 
 // ── 今日挑戰子彈繪製 ──────────────────────────────────────
+function drawNormalBullet(b){
+  let sweepCol='#ff2222',superCol='#ffee00';
+  let isRainbow=secretModeActive&&!challengeMode;
+  let sz=b.bsize||'small';
+  if(b.laser){
+    let thick=b.thick;
+    let coreW=thick?14:8, beamH=thick?72:62;
+    cx.globalAlpha=0.09;
+    cx.fillStyle='#4466ff';
+    let hw1=thick?44:26;
+    cx.fillRect(snap(b.x-hw1/2),snap(b.y-beamH-4),hw1,beamH+8);
+    cx.globalAlpha=0.18;
+    cx.fillStyle='#7755ee';
+    let hw2=thick?30:18;
+    cx.fillRect(snap(b.x-hw2/2),snap(b.y-beamH-2),hw2,beamH+4);
+    cx.globalAlpha=1;
+    let mw=thick?18:10, seg=Math.ceil(beamH/3);
+    cx.fillStyle='#6699ff';cx.fillRect(snap(b.x-mw/2),snap(b.y-beamH),mw,seg);
+    cx.fillStyle='#9966ff';cx.fillRect(snap(b.x-mw/2),snap(b.y-beamH+seg),mw,seg);
+    cx.fillStyle='#bb66ff';cx.fillRect(snap(b.x-mw/2),snap(b.y-beamH+seg*2),mw,beamH-seg*2);
+    let iw=thick?10:6, iseg=Math.ceil(beamH*0.75/3);
+    cx.fillStyle='#99bbff';cx.fillRect(snap(b.x-iw/2),snap(b.y-beamH*0.75),iw,iseg);
+    cx.fillStyle='#bbaaff';cx.fillRect(snap(b.x-iw/2),snap(b.y-beamH*0.75+iseg),iw,iseg);
+    cx.fillStyle='#dd99ff';cx.fillRect(snap(b.x-iw/2),snap(b.y-beamH*0.75+iseg*2),iw,beamH*0.75-iseg*2);
+    let ww=thick?6:4;
+    cx.fillStyle='#ffffff';cx.fillRect(snap(b.x-ww/2),snap(b.y-beamH),ww,Math.round(beamH*0.92));
+    cx.globalAlpha=0.45;cx.fillStyle='#eeeeff';
+    cx.fillRect(snap(b.x-ww/2-2),snap(b.y-beamH),ww+4,Math.round(beamH*0.85));
+    cx.globalAlpha=1;
+    cx.globalAlpha=0.75;cx.fillStyle='#ccddff';
+    cx.fillRect(snap(b.x-mw*0.65/2),snap(b.y-beamH-4),mw*0.65,5);
+    cx.globalAlpha=0.6;cx.fillStyle='#ffffff';
+    cx.fillRect(snap(b.x-2),snap(b.y-beamH-7),4,9);
+    cx.globalAlpha=1;
+    if(fr%4===0){
+      let r=Math.random();
+      let pc=r<0.25?'#ffffff':r<0.6?'#88aaff':'#cc88ff';
+      particles.push({x:b.x+(Math.random()*24-12),y:b.y-Math.random()*beamH,
+        vx:(Math.random()-0.5)*1.8,vy:-(Math.random()*0.5+0.1),
+        life:22+(Math.random()*14|0),maxLife:36,color:pc,coin:false});
+    }
+  } else {
+    // bsize: small=w4h10, mid=w6h14, large=w8h18, huge=w11h22
+    const dims={small:[4,10],mid:[6,14],large:[8,18],huge:[11,22]};
+    const cols={small:'#00ff88',mid:'#00ffcc',large:'#ffdd00',huge:'#ff8800'};
+    let [bw,bh]=dims[sz]||dims.small;
+    let bc=sweepMode>0?sweepCol:superMode>0?superCol:isRainbow?`hsl(${fr*8%360},100%,65%)`:cols[sz]||'#00ff88';
+    cx.fillStyle=bc;cx.fillRect(snap(b.x-bw/2),snap(b.y-bh),bw,bh);
+    cx.fillStyle='#ffffff';cx.fillRect(snap(b.x-1),snap(b.y-bh),2,Math.round(bh*0.5));
+  }
+}
+
 function drawChallengeBullet(b){
   let btype=challengeMode&&todayChallenge?todayChallenge.bullet:'';
-  if(!challengeMode||!btype||b.laser){
-    // 雷射保持原樣
-    if(b.laser){
-      let bc=secretModeActive?`hsl(${fr*8%360},100%,65%)`:'#ffee00';
-      cx.fillStyle=bc;cx.fillRect(snap(b.x-3),snap(b.y-9),6,18);
-      cx.fillStyle='#ffffff';cx.fillRect(snap(b.x-1),snap(b.y-9),3,12);
-      cx.globalAlpha=0.3;cx.fillStyle=bc;cx.fillRect(snap(b.x-6),snap(b.y-14),12,22);cx.globalAlpha=1;
-    } else if(b.big){
-      let bc=secretModeActive?`hsl(${fr*8%360},100%,65%)`:'#ffdd00';
-      pr(b.x-4,b.y-7,8,14,bc);pr(b.x-2,b.y-7,4,8,'#ffffff');
-    } else {
-      let bc=secretModeActive?`hsl(${fr*8%360},100%,65%)`:'#00ff88';
-      pr(b.x-2,b.y-5,4,10,bc);pr(b.x-1,b.y-5,2,5,'#ffffff');
-    }
-    return;
-  }
+  if(!challengeMode||!btype){drawNormalBullet(b);return;}
+  // 今日挑戰特殊子彈（雷射仍用一般樣式）
+  if(b.laser){drawNormalBullet(b);return;}
   if(btype==='heart_blue'){
     cx.fillStyle='#5599ff';cx.beginPath();
     cx.arc(b.x-3,b.y-2,4,Math.PI,0);cx.arc(b.x+3,b.y-2,4,Math.PI,0);
@@ -684,7 +746,6 @@ function drawChallengeBullet(b){
     for(let i=0;i<5;i++){let a=i*Math.PI*2/5-Math.PI/2;cx.fillRect(snap(Math.cos(a)*5-1),snap(Math.sin(a)*5-1),3,3);}
     cx.fillRect(-2,-2,4,4);cx.restore();
   } else if(btype==='butterfly_purple'){
-    cx.fillStyle='#bb66ff';
     pr(b.x-7,b.y-3,6,5,'#bb66ff');pr(b.x+1,b.y-3,6,5,'#bb66ff');
     pr(b.x-5,b.y+1,4,4,'#bb66ff');pr(b.x+1,b.y+1,4,4,'#bb66ff');
     pr(b.x-1,b.y-5,3,10,'#7722cc');
@@ -702,7 +763,7 @@ function drawChallengeBullet(b){
     let fc=fr%12<6?'#ff4400':'#ff8800';
     pr(b.x-3,b.y-8,6,14,fc);pr(b.x-5,b.y-4,10,10,fr%12<6?'#ff8800':'#ffcc00');
     pr(b.x-2,b.y-10,4,4,'#ffff44');
-  }
+  } else {drawNormalBullet(b);}
 }
 
 function drawSnake(x,y,rot,r,hit){
@@ -824,7 +885,7 @@ function initGame(){
   eggMsg='';eggMsgTimer=0;eggFlash='';eggFlashTimer=0;
   topEdgeTimer=0;topEggDone=false;
   // secretModeEverActive 不重置（一局觸發永久記住）
-  secretModeActive=secretModeEverActive;
+  secretModeActive=challengeMode?false:secretModeEverActive;
   lastLemonThreshold=0;lastMambaThreshold=0;
   ship={x:W/2,y:H-80,tx:W/2,ty:H-80};
   bullets=[];enemies=[];bossBullets=[];particles=[];powerups=[];
@@ -858,34 +919,35 @@ function spawnLemonBoss(){lemonBossActive=true;lemonBoss={x:W/2,y:-70,tx:W/2+80,
 function spawnMamba(){mambaActive=true;mamba={x:W/2,y:-60,r:30,hp:80,maxHp:80,hit:0,shootTimer:0,angle:Math.PI/2,vx:1.2};}
 
 function fireAt(tx,ty){
-  if(sweepMode>0) return; // 掃空模式不用點擊，自動清場
+  if(sweepMode>0) return;
   let dx=tx-ship.x,dy=ty-ship.y,len=Math.sqrt(dx*dx+dy*dy)||1,sp=16;
   let nx=dx/len,ny=dy/len;
-  // 超級模式下的等級：若 bulletLevel < 2（大子彈），升到大子彈(2)；否則升一級；MAX雷射→掃空
+  // 超級模式：升2級，MAX(LV9)→掃空
   let lvl;
   if(superMode>0){
-    if(bulletLevel<2) lvl=2;
-    else if(bulletLevel<4) lvl=bulletLevel+1;
-    else lvl=4; // 雷射等級超級：由外部觸發掃空，這裡仍射雷射
+    if(bulletLevel>=9) lvl=9; // 由外部觸發掃空
+    else lvl=Math.min(9,bulletLevel+2);
   } else {
     lvl=bulletLevel;
   }
-  if(lvl===4){
-    bullets.push({x:ship.x,y:ship.y-20,vx:nx*sp,vy:ny*sp,laser:true,big:false});
-    bullets.push({x:ship.x-9,y:ship.y-16,vx:nx*sp,vy:ny*sp,laser:true,big:false});
-    bullets.push({x:ship.x+9,y:ship.y-16,vx:nx*sp,vy:ny*sp,laser:true,big:false});
-  } else if(lvl===3){
-    bullets.push({x:ship.x,y:ship.y-14,vx:nx*sp,vy:ny*sp,laser:false,big:true});
-    bullets.push({x:ship.x-9,y:ship.y-10,vx:nx*(sp-1),vy:ny*(sp-1),laser:false,big:true});
-    bullets.push({x:ship.x+9,y:ship.y-10,vx:nx*(sp-1),vy:ny*(sp-1),laser:false,big:true});
-  } else if(lvl===2){
-    bullets.push({x:ship.x,y:ship.y-14,vx:nx*sp,vy:ny*sp,laser:false,big:true});
-  } else if(lvl===1){
-    bullets.push({x:ship.x,y:ship.y-14,vx:nx*sp,vy:ny*sp,laser:false,big:false});
-    bullets.push({x:ship.x-7,y:ship.y-10,vx:nx*(sp-1),vy:ny*(sp-1),laser:false,big:false});
-    bullets.push({x:ship.x+7,y:ship.y-10,vx:nx*(sp-1),vy:ny*(sp-1),laser:false,big:false});
-  } else {
-    bullets.push({x:ship.x,y:ship.y-14,vx:nx*sp,vy:ny*sp,laser:false,big:false});
+  // 子彈尺寸對照：
+  // 小 big:false  w4 h10
+  // 中 big:'mid'  w6 h14
+  // 大 big:'large' w8 h18
+  // 巨 big:'huge'  w11 h22
+  // 雷射細 laser:true thick:false
+  // 雷射粗 laser:true thick:true
+  const sizes={0:'small',1:'small',2:'mid',3:'mid',4:'large',5:'large',6:'huge',7:'huge',8:'laser_thin',9:'laser_thick'};
+  const counts={0:1,1:3,2:1,3:3,4:1,5:3,6:1,7:3,8:1,9:1};
+  const sz=sizes[lvl]||'small';
+  const ct=counts[lvl]||1;
+  const isLaser=sz.startsWith('laser');
+  const offsets=ct===1?[0]:ct===3?[-9,0,9]:[-9,0,9];
+  const spds=ct===1?[sp]:ct===3?[sp,sp,sp-1]:[];
+  for(let i=0;i<ct;i++){
+    let ox=offsets[i], spd=sp-(i===0?0:1);
+    let yoff=i===0?-20:(isLaser?-16:-14);
+    bullets.push({x:ship.x+ox,y:ship.y+yoff,vx:nx*spd,vy:ny*spd,laser:isLaser,thick:sz==='laser_thick',bsize:sz});
   }
 }
 
@@ -1123,7 +1185,7 @@ function loop(){
     p.y+=p.vy;
     // bullet 增強劑：自動收集，不需靠近
     if(p.type==='bullet'){
-      if(bulletLevel<4){
+      if(bulletLevel<9){
         bulletExp++;
         if(bulletExp>=(bulletExpNeeded[bulletLevel]||5)){
           bulletExp=0; bulletLevel++;
@@ -1132,14 +1194,14 @@ function loop(){
           spawnParticles(p.x,p.y,'#00ff88',4);
         }
       }
-      return false; // 立刻消失，不顯示不等撿
+      return false;
     }
     drawPickup(p);
     let dx=p.x-ship.x,dy=p.y-ship.y;
     if(Math.sqrt(dx*dx+dy*dy)<22){
       if(p.type==='hp'){lives=Math.min(9,lives+1);spawnParticles(ship.x,ship.y,'#00ff44',12);}
       else if(p.type==='super'){
-        if(bulletLevel>=4){
+        if(bulletLevel>=9){
           sweepMode=180; sweepCount=3;
           spawnParticles(ship.x,ship.y,'#ff4444',24);
         } else {
@@ -1240,7 +1302,6 @@ function showMainMenu(extraHtml=''){
     ${extraHtml?`<div class="sub" style="margin-bottom:10px;font-size:11px">${extraHtml}</div>`:''}
     <button id="btnNormal" class="ov-btn">▶ 一般模式 ◀</button>
     <button id="btnChallenge" class="ov-btn today">⚡ 今日挑戰 ◀</button>
-    <div style="font-size:10px;color:#665500;margin-bottom:8px;font-family:'Courier New',monospace">${todayLabel}</div>
     <button id="btnRecord" class="ov-btn rec">📊 過往紀錄</button>`;
   ov.style.display='flex';
   document.getElementById('btnNormal').onclick=()=>{challengeMode=false;startGame();};
@@ -1294,20 +1355,27 @@ function showChallengeInfo(dayOverride){
   if(bc.rainbow){
     bodyStyle=`background:linear-gradient(135deg,rgba(255,80,80,0.08),rgba(255,200,0,0.08),rgba(0,255,100,0.08),rgba(0,150,255,0.08),rgba(180,0,255,0.08));border:1px solid rgba(255,180,255,0.4);color:#ddbbff`;
   }
+  const noDate=['無特定事件','一個月出現一次'];
+  const showDate=!noDate.includes(day.date);
   ov.innerHTML=`
     <div class="challenge-page">
       <div class="challenge-emoji">${day.emoji}</div>
       <div class="challenge-title" style="color:${bc.text}">${day.name}</div>
-      <div class="challenge-date">${day.date}</div>
-      <div class="challenge-body" style="${bodyStyle}">${day.body}</div>
-      <div class="challenge-hud">HUD 口號：${day.hud}</div>
+      ${showDate?`<div class="challenge-date" style="color:#ffffff">${day.date}</div>`:''}
+      <div class="challenge-body" style="${bodyStyle};text-align:center">${day.body}</div>
+      <div class="challenge-hud" style="color:#ffffff">HUD 口號：${day.hud}</div>
       <div style="display:flex;gap:8px;justify-content:center">
         <button id="btnStartChallenge" class="ov-btn today" style="width:180px;padding:11px 0">⚡ 開始挑戰</button>
         <button id="btnBack2" class="ov-btn rec" style="width:80px;padding:11px 0">← 返回</button>
       </div>
     </div>`;
   ov.style.display='flex';
-  document.getElementById('btnStartChallenge').onclick=()=>{todayChallenge=day;challengeMode=true;startGame();};
+  document.getElementById('btnStartChallenge').onclick=()=>{
+    todayChallenge=day;
+    challengeMode=true;
+    secretModeActive=false; // 今日挑戰不適用秘密模式
+    startGame();
+  };
   document.getElementById('btnBack2').onclick=()=>showMainMenu();
 }
 
