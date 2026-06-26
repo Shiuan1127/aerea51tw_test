@@ -237,144 +237,156 @@ function hud(){
   }
 }
 
-// ── IP 飛碟造型（參照圖一貓咪臉造型）────────────────────
-// 共用：圓頭貓咪臉底盤 + 個性化顏色/表情
-function drawCatIP(x,y,bodyCol,earCol,faceCol,drawFace,glowCol){
-  // 底盤（碟形）
+// ── IP 飛碟造型 ───────────────────────────────────────────
+// 共用底盤
+function drawCatDisk(x,y,glowCol){
   pr(x-30,y+8,60,6,'#223355');pr(x-32,y+10,64,5,'#2244aa');pr(x-28,y+13,56,4,'#1a2288');
   let lc=['#00ffff','#ffff00','#00ffff','#ff44ff','#00ffff'];
   for(let i=0;i<5;i++){pr(x-18+i*9,y+9,5,4,lc[i]);}
   pr(x-18,y+2,36,7,'#334466');pr(x-20,y+3,40,6,'#3355aa');
-  // 圓形身體
-  for(let px2=-18;px2<=18;px2+=P)
-    for(let py2=-18;py2<=18;py2+=P)
-      if(px2*px2+py2*py2<=18*18){cx.fillStyle=bodyCol;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
-  // 臉部（白/淡色橢圓）
-  for(let px2=-11;px2<=11;px2+=P)
-    for(let py2=-11;py2<=11;py2+=P)
-      if(px2*px2*1.1+py2*py2<=11*11){cx.fillStyle=faceCol;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
-  // 耳朵
-  pr(x-18,y-14,8,8,earCol);pr(x-16,y-12,5,6,bodyCol);
-  pr(x+10,y-14,8,8,earCol);pr(x+11,y-12,5,6,bodyCol);
-  // 表情回調
-  drawFace(x,y);
-  // 引擎
   let ef=fr%10<5;
   pr(x-3,y+17,6,ef?8:6,glowCol||'#00ff88');
   pr(x-2,y+17,4,ef?6:4,'#aaffcc');
   pr(x-1,y+17,2,ef?4:3,'#ffffff');
-  if(superMode>0&&fr%6<3){cx.strokeStyle='#ffff00';cx.lineWidth=2;cx.strokeRect(snap(x-34),snap(y-22),68,44);}
+}
+// 圓形身體
+function drawCatBody(x,y,bodyCol,earCol,faceCol){
+  for(let px2=-18;px2<=18;px2+=P)
+    for(let py2=-18;py2<=18;py2+=P)
+      if(px2*px2+py2*py2<=18*18){cx.fillStyle=bodyCol;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
+  for(let px2=-11;px2<=11;px2+=P)
+    for(let py2=-11;py2<=11;py2+=P)
+      if(px2*px2*1.1+py2*py2<=11*11){cx.fillStyle=faceCol;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
+  pr(x-18,y-14,8,8,earCol);pr(x-16,y-12,5,6,bodyCol);
+  pr(x+10,y-14,8,8,earCol);pr(x+11,y-12,5,6,bodyCol);
+}
+// 統一表情：X眼 + 吐舌（顏色可自訂）
+function drawXFace(x,y,eyeCol,noseCol,tongueCol){
+  // 左X眼
+  pr(x-9,y-7,3,3,eyeCol);pr(x-7,y-5,3,3,eyeCol);
+  pr(x-9,y-5,3,3,eyeCol);pr(x-7,y-7,3,3,eyeCol);
+  // 右X眼
+  pr(x+4,y-7,3,3,eyeCol);pr(x+6,y-5,3,3,eyeCol);
+  pr(x+4,y-5,3,3,eyeCol);pr(x+6,y-7,3,3,eyeCol);
+  // 鼻
+  pr(x-1,y,2,2,noseCol);
+  // 嘴+舌
+  pr(x-3,y+3,6,2,eyeCol);
+  pr(x-1,y+4,2,4,tongueCol);
 }
 
-// Karina IP — 藍灰色身體，沉穩眼神，髮旋
+function drawCatIP(x,y,bodyCol,earCol,faceCol,eyeCol,noseCol,tongueCol,glowCol){
+  drawCatDisk(x,y,glowCol);
+  drawCatBody(x,y,bodyCol,earCol,faceCol);
+  drawXFace(x,y,eyeCol,noseCol,tongueCol);
+}
+
+// 各成員IP（統一表情，顏色照娃娃）
 function drawKarinaIP(x,y){
-  drawCatIP(x,y,'#aabbdd','#8899bb','#ddeeff',(x,y)=>{
-    pr(x-2,y-14,4,4,'#8899bb'); // 髮旋
-    pr(x-3,y-13,2,2,'#8899bb');
-    pr(x-6,y-4,4,5,'#334466');pr(x+2,y-4,4,5,'#334466'); // 眼
-    pr(x-5,y-3,3,3,'#6688aa');pr(x+2,y-3,3,3,'#6688aa');
-    pr(x-4,y-2,2,2,'#fff');pr(x+3,y-2,2,2,'#fff');
-    pr(x-3,y+3,2,2,'#334466');pr(x+1,y+3,2,2,'#334466'); // 鼻
-    pr(x-4,y+5,8,2,'#667799'); // 嘴
-  },'#aaddff');
+  // 藍灰色（圖一左一）
+  drawCatIP(x,y,'#a8bcd4','#7a9bbf','#d8e8f8','#3a5a7a','#5a7a9a','#aacce8','#aaddff');
 }
-
-// Giselle IP — 灰色身體，細長眼，貓鬍鬚
 function drawGiselleIP(x,y){
-  drawCatIP(x,y,'#888899','#666677','#ddddee',(x,y)=>{
-    pr(x-7,y-5,5,3,'#333344');pr(x+2,y-5,5,3,'#333344'); // 細眼
-    pr(x-6,y-4,4,2,'#555566');pr(x+2,y-4,4,2,'#555566');
-    pr(x-2,y-1,4,2,'#555566'); // 鼻
-    pr(x-3,y+2,2,2,'#888899');pr(x+1,y+2,2,2,'#888899');
-    pr(x-10,y+1,8,1,'#aaaaaa');pr(x+2,y+1,8,1,'#aaaaaa'); // 鬍鬚
-    pr(x-10,y+3,7,1,'#aaaaaa');pr(x+3,y+3,7,1,'#aaaaaa');
-  },'#aaaacc');
+  // 深灰色（圖一左二）
+  drawCatIP(x,y,'#7a7a8a','#555566','#ccccdd','#334455','#445566','#9999aa','#aaaacc');
 }
-
-// Winter IP — 白色身體，圓大眼，小角（雪花感）
 function drawWinterIP(x,y){
-  drawCatIP(x,y,'#ddeeff','#bbccee','#ffffff',(x,y)=>{
-    cx.beginPath();cx.arc(snap(x-4),snap(y-3),5,0,Math.PI*2);cx.fillStyle='#8899bb';cx.fill();
-    cx.beginPath();cx.arc(snap(x+4),snap(y-3),5,0,Math.PI*2);cx.fillStyle='#8899bb';cx.fill();
-    cx.beginPath();cx.arc(snap(x-4),snap(y-3),3,0,Math.PI*2);cx.fillStyle='#334466';cx.fill();
-    cx.beginPath();cx.arc(snap(x+4),snap(y-3),3,0,Math.PI*2);cx.fillStyle='#334466';cx.fill();
-    pr(x-3,y-4,2,2,'#fff');pr(x+3,y-4,2,2,'#fff');
-    pr(x-2,y+2,4,2,'#aabbcc'); // 鼻嘴
-    pr(x-3,y+4,6,2,'#8899bb');
-    // 小角（Winter特徵）
-    pr(x-2,y-18,4,5,'#ddeeff');pr(x-1,y-21,2,4,'#ccdde');
-  },'#88aaff');
+  // 白/極淡藍（圖一左三）
+  drawCatIP(x,y,'#e8eef8','#b8c8e0','#ffffff','#4466aa','#6688bb','#bbccee','#88aaff');
 }
-
-// Ningning IP — 紫色身體，X眼/吐舌，可愛感
 function drawNingningIP(x,y){
-  drawCatIP(x,y,'#cc99ee','#aa77cc','#eeddff',(x,y)=>{
-    // X眼
-    pr(x-8,y-6,3,3,'#7733aa');pr(x-6,y-4,3,3,'#7733aa');
-    pr(x-8,y-4,3,3,'#7733aa');pr(x-6,y-6,3,3,'#7733aa');
-    pr(x+3,y-6,3,3,'#7733aa');pr(x+5,y-4,3,3,'#7733aa');
-    pr(x+3,y-4,3,3,'#7733aa');pr(x+5,y-6,3,3,'#7733aa');
-    pr(x-1,y+1,2,2,'#aa77cc'); // 鼻
-    pr(x-3,y+3,6,3,'#cc88ee'); // 嘴
-    pr(x-1,y+4,2,3,'#ee88cc'); // 舌
-  },'#dd88ff');
+  // 紫色（圖一右一）
+  drawCatIP(x,y,'#c088e0','#9966bb','#ead8f8','#6633aa','#8844bb','#cc88ee','#dd88ff');
 }
 
-// 四個IP並排（ae入侵日 / aespa日）
-function drawQuadIP(cx2,y){
-  let spacing=68;
-  let startX=W/2-spacing*1.5;
-  drawKarinaIP(startX,y);
-  drawGiselleIP(startX+spacing,y);
-  drawWinterIP(startX+spacing*2,y);
-  drawNingningIP(startX+spacing*3,y);
+// 小貓圓體（不含底盤，用於 2×2 群組）
+function drawMiniCat(x,y,bodyCol,earCol,faceCol,eyeCol,noseCol,tongueCol){
+  let r=13;
+  for(let px2=-r;px2<=r;px2+=P)
+    for(let py2=-r;py2<=r;py2+=P)
+      if(px2*px2+py2*py2<=r*r){cx.fillStyle=bodyCol;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
+  for(let px2=-8;px2<=8;px2+=P)
+    for(let py2=-8;py2<=8;py2+=P)
+      if(px2*px2*1.1+py2*py2<=8*8){cx.fillStyle=faceCol;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
+  pr(x-13,y-10,6,6,earCol);pr(x-11,y-9,4,5,bodyCol);
+  pr(x+7,y-10,6,6,earCol);pr(x+8,y-9,4,5,bodyCol);
+  // X眼（縮小版）
+  pr(x-7,y-5,2,2,eyeCol);pr(x-5,y-3,2,2,eyeCol);
+  pr(x-7,y-3,2,2,eyeCol);pr(x-5,y-5,2,2,eyeCol);
+  pr(x+3,y-5,2,2,eyeCol);pr(x+5,y-3,2,2,eyeCol);
+  pr(x+3,y-3,2,2,eyeCol);pr(x+5,y-5,2,2,eyeCol);
+  pr(x-1,y+1,2,2,noseCol);
+  pr(x-2,y+3,4,2,eyeCol);
+  pr(x-1,y+4,2,3,tongueCol);
 }
 
-// Lemonade IP（黃色版四個並排）
-function drawLemonadeIP(cx2,y){
-  let spacing=68;
-  let startX=W/2-spacing*1.5;
-  let lemonFaces=[(x,y)=>{ // Karina lemon
-    pr(x-2,y-14,4,4,'#ccbb00');
-    pr(x-6,y-4,4,5,'#886600');pr(x+2,y-4,4,5,'#886600');
-    pr(x-5,y-3,3,3,'#aa9900');pr(x+2,y-3,3,3,'#aa9900');
-    pr(x-4,y-2,2,2,'#ffff88');pr(x+3,y-2,2,2,'#ffff88');
-    pr(x-4,y+5,8,2,'#aa9900');
-  },(x,y)=>{ // Giselle lemon
-    pr(x-7,y-5,5,3,'#886600');pr(x+2,y-5,5,3,'#886600');
-    pr(x-6,y-4,4,2,'#aa9900');pr(x+2,y-4,4,2,'#aa9900');
-    pr(x-2,y-1,4,2,'#aa9900');
-    pr(x-10,y+1,8,1,'#ccbb00');pr(x+2,y+1,8,1,'#ccbb00');
-  },(x,y)=>{ // Winter lemon
-    cx.beginPath();cx.arc(snap(x-4),snap(y-3),5,0,Math.PI*2);cx.fillStyle='#aa9900';cx.fill();
-    cx.beginPath();cx.arc(snap(x+4),snap(y-3),5,0,Math.PI*2);cx.fillStyle='#aa9900';cx.fill();
-    cx.beginPath();cx.arc(snap(x-4),snap(y-3),3,0,Math.PI*2);cx.fillStyle='#664400';cx.fill();
-    cx.beginPath();cx.arc(snap(x+4),snap(y-3),3,0,Math.PI*2);cx.fillStyle='#664400';cx.fill();
-    pr(x-3,y+4,6,2,'#aa9900');
-    pr(x-2,y-18,4,5,'#eedd00');
-  },(x,y)=>{ // Ningning lemon
-    pr(x-8,y-6,3,3,'#886600');pr(x-6,y-4,3,3,'#886600');
-    pr(x-8,y-4,3,3,'#886600');pr(x-6,y-6,3,3,'#886600');
-    pr(x+3,y-6,3,3,'#886600');pr(x+5,y-4,3,3,'#886600');
-    pr(x+3,y-4,3,3,'#886600');pr(x+5,y-6,3,3,'#886600');
-    pr(x-3,y+3,6,3,'#ccbb00');pr(x-1,y+4,2,3,'#ddcc00');
-  }];
-  for(let i=0;i<4;i++){
-    let lx=startX+spacing*i;
-    drawCatIP(lx,y,'#eedd88','#ccbb44','#fffff0',lemonFaces[i],'#eecc00');
-  }
+// 小白圓（MY）
+function drawMiniMY(x,y){
+  let r=9;
+  for(let px2=-r;px2<=r;px2+=P)
+    for(let py2=-r;py2<=r;py2+=P)
+      if(px2*px2+py2*py2<=r*r){cx.fillStyle='#f0f0f0';cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
+  // 小耳
+  pr(x-9,y-8,4,4,'#e0e0e0');pr(x+5,y-8,4,4,'#e0e0e0');
+  // 笑臉
+  pr(x-3,y-2,2,2,'#aaaaaa');pr(x+1,y-2,2,2,'#aaaaaa');
+  pr(x-2,y+2,4,2,'#aaaaaa');
+}
+
+// ae 入侵日：2×2黑白 + 中間小白MY
+function drawAeQuad(x,y){
+  let ox=30,oy=30;
+  // 底部共用碟盤（寬版）
+  pr(x-ox-20,y+oy+8,ox*2+40,5,'#111122');
+  pr(x-ox-22,y+oy+10,ox*2+44,4,'#1a1a44');
+  let ef=fr%10<5;
+  pr(x-3,y+oy+17,6,ef?8:6,'#8888ff');
+  // 四小隻黑白版 2×2
+  drawMiniCat(x-ox,y-oy,'#222222','#111111','#444444','#cccccc','#888888','#999999');
+  drawMiniCat(x+ox,y-oy,'#333333','#222222','#555555','#cccccc','#888888','#999999');
+  drawMiniCat(x-ox,y+oy,'#1a1a1a','#111111','#333333','#cccccc','#888888','#999999');
+  drawMiniCat(x+ox,y+oy,'#2a2a2a','#1a1a1a','#444444','#cccccc','#888888','#999999');
+  // 中間小白MY
+  drawMiniMY(x,y);
+}
+
+// aespa / kwangya 日：2×2 彩色
+function drawColorQuad(x,y){
+  let ox=30,oy=30;
+  pr(x-ox-20,y+oy+8,ox*2+40,5,'#223355');
+  pr(x-ox-22,y+oy+10,ox*2+44,4,'#2244aa');
+  let ef=fr%10<5;
+  pr(x-3,y+oy+17,6,ef?8:6,'#00ff88');
+  drawMiniCat(x-ox,y-oy,'#a8bcd4','#7a9bbf','#d8e8f8','#3a5a7a','#5a7a9a','#aacce8');
+  drawMiniCat(x+ox,y-oy,'#7a7a8a','#555566','#ccccdd','#334455','#445566','#9999aa');
+  drawMiniCat(x-ox,y+oy,'#e8eef8','#b8c8e0','#ffffff','#4466aa','#6688bb','#bbccee');
+  drawMiniCat(x+ox,y+oy,'#c088e0','#9966bb','#ead8f8','#6633aa','#8844bb','#cc88ee');
+}
+
+// Lemon Day：2×2 黃色版
+function drawLemonQuad(x,y){
+  let ox=30,oy=30;
+  pr(x-ox-20,y+oy+8,ox*2+40,5,'#886600');
+  pr(x-ox-22,y+oy+10,ox*2+44,4,'#aa8800');
+  let ef=fr%10<5;
+  pr(x-3,y+oy+17,6,ef?8:6,'#ffdd00');
+  let lyc='#eedd88',lec='#ccbb44',lfc='#fffff0',lic='#886600',lnc='#aa9900',ltc='#ddcc00';
+  drawMiniCat(x-ox,y-oy,lyc,lec,lfc,lic,lnc,ltc);
+  drawMiniCat(x+ox,y-oy,lyc,lec,lfc,lic,lnc,ltc);
+  drawMiniCat(x-ox,y+oy,lyc,lec,lfc,lic,lnc,ltc);
+  drawMiniCat(x+ox,y+oy,lyc,lec,lfc,lic,lnc,ltc);
 }
 
 function drawUFO(x,y){
-  // 依挑戰模式選擇飛碟/IP造型
   if(challengeMode&&todayChallenge){
     const id=todayChallenge.id;
     if(id==='karina') return drawKarinaIP(x,y);
     if(id==='giselle') return drawGiselleIP(x,y);
     if(id==='winter') return drawWinterIP(x,y);
     if(id==='ningning') return drawNingningIP(x,y);
-    if(id==='ae'||id==='kwangya') return drawQuadIP(cx,y);
-    if(id==='lemon') return drawLemonadeIP(cx,y);
+    if(id==='ae') return drawAeQuad(x,y);
+    if(id==='kwangya') return drawColorQuad(x,y);
+    if(id==='lemon') return drawLemonQuad(x,y);
   }
   // 一般模式 — 原版外星人UFO
   pr(x-10,y-18,20,16,'#22aa22');
@@ -541,15 +553,34 @@ function drawDragonfly(x,y,rot,r,hit){ // Giselle日蜻蜓
   pr(-4,-r*0.6,3,3,'#ffff00');pr(1,-r*0.6,3,3,'#ffff00');
   cx.restore();
 }
-function drawYam(x,y,r,hit){ // Winter日地瓜
-  let c=hit?'#fff':'#cc6622',d=hit?'#aaa':'#884411',l=hit?'#fff':'#ee8844';
-  pr(x-r,y-r*0.6,r*2,r*1.6,c);
-  pr(x-r+3,y-r,r*2-6,r*0.5,c);pr(x-r+3,y+r*0.9,r*2-6,r*0.5,c);
-  pr(x-r+2,y-r*0.7,r*0.6,r*1.4,l);
-  pr(x+r*0.3,y-r*0.5,r*0.5,r,l);
-  pr(x-r*0.1,y-r,3,r*0.5,'#228822');
-  pr(x+r*0.2,y-r-3,2,r*0.4,'#228822');
-  if(fr%16<8){pr(x-r*0.3,y-r*0.3,4,4,'#ffeecc');pr(x+r*0.1,y+r*0.1,3,3,'#ffddaa');}
+function drawYam(x,y,r,hit){ // Winter日地瓜：橢圓胖體+紫色皮+明顯紋路
+  let c=hit?'#fff':'#9955bb', d=hit?'#aaa':'#6633aa', l=hit?'#fff':'#cc88ee', sk=hit?'#ddd':'#774499';
+  // 胖橢圓主體（寬大於高）
+  for(let px2=-(r*1.2|0);px2<=(r*1.2|0);px2+=P)
+    for(let py2=-(r*0.85|0);py2<=(r*0.85|0);py2+=P){
+      let nx=px2/(r*1.2), ny=py2/(r*0.85);
+      if(nx*nx+ny*ny<=1){cx.fillStyle=c;cx.fillRect(snap(x+px2),snap(y+py2),P,P);}
+    }
+  // 縱向紋路（地瓜特徵）
+  for(let i=-1;i<=1;i++){
+    let lx=x+i*r*0.4;
+    for(let py2=-(r*0.7|0);py2<=(r*0.7|0);py2+=P)
+      if(Math.abs(py2/(r*0.7))<0.95){cx.fillStyle=sk;cx.fillRect(snap(lx-1),snap(y+py2),2,P);}
+  }
+  // 高光
+  pr(x-r*0.6,y-r*0.55,r*0.5,r*0.2,l);
+  // 根鬚（兩端）
+  pr(x-r*1.2,y-r*0.1,r*0.3,4,d); pr(x-r*1.2,y+r*0.15,r*0.2,3,d);
+  pr(x+r*0.9,y-r*0.1,r*0.3,4,d); pr(x+r*0.9,y+r*0.15,r*0.2,3,d);
+  // 葉/蒂頭（上方）
+  pr(x-4,y-r*0.85-4,8,5,'#337722'); pr(x-2,y-r*0.85-7,4,4,'#448833');
+  pr(x-6,y-r*0.85-2,5,3,'#337722'); pr(x+1,y-r*0.85-2,5,3,'#337722');
+  // 靜電光暈（拔絲冬冬！）
+  if(fr%14<7){
+    cx.strokeStyle='#ffeecc';cx.lineWidth=1;
+    cx.beginPath();cx.arc(snap(x),snap(y),r*1.3,0,Math.PI*2);cx.stroke();
+    pr(x-r*1.1,y-r*0.3,3,3,'#ffffaa');pr(x+r*0.9,y+r*0.2,3,3,'#ffffaa');
+  }
 }
 function drawNote(x,y,r,rot,hit){ // Ningning日音符
   let c=hit?'#fff':'#dd88ff',d=hit?'#aaa':'#8833cc',l=hit?'#fff':'#eebbff';
@@ -1242,12 +1273,26 @@ function showChallengeInfo(dayOverride){
     document.getElementById('btnBack').onclick=()=>showMainMenu();
     return;
   }
+  const bgMap={
+    karina:  {bg:'rgba(100,160,255,0.10)',border:'rgba(100,160,255,0.35)',text:'#aaccff'},
+    giselle: {bg:'rgba(255,150,180,0.10)',border:'rgba(255,150,180,0.35)',text:'#ffaabb'},
+    winter:  {bg:'rgba(230,240,255,0.12)',border:'rgba(200,220,255,0.45)',text:'#cce0ff'},
+    ningning:{bg:'rgba(180,100,255,0.10)',border:'rgba(180,100,255,0.35)',text:'#cc99ff'},
+    ae:      {bg:'rgba(255,100,100,0.08)',border:'rgba(255,100,100,0.3)', text:'#ff9999',rainbow:true},
+    lemon:   {bg:'rgba(255,220,50,0.10)', border:'rgba(255,220,50,0.35)', text:'#ffdd88'},
+    kwangya: {bg:'rgba(255,120,30,0.10)', border:'rgba(255,120,30,0.35)', text:'#ff9955'},
+  };
+  const bc=bgMap[day.id]||{bg:'rgba(0,255,136,0.05)',border:'rgba(0,255,136,0.25)',text:'#88ffaa'};
+  let bodyStyle=`background:${bc.bg};border:1px solid ${bc.border};color:${bc.text}`;
+  if(bc.rainbow){
+    bodyStyle=`background:linear-gradient(135deg,rgba(255,80,80,0.08),rgba(255,200,0,0.08),rgba(0,255,100,0.08),rgba(0,150,255,0.08),rgba(180,0,255,0.08));border:1px solid rgba(255,180,255,0.4);color:#ddbbff`;
+  }
   ov.innerHTML=`
     <div class="challenge-page">
       <div class="challenge-emoji">${day.emoji}</div>
-      <div class="challenge-title">${day.name}</div>
+      <div class="challenge-title" style="color:${bc.text}">${day.name}</div>
       <div class="challenge-date">${day.date}</div>
-      <div class="challenge-body">${day.body}</div>
+      <div class="challenge-body" style="${bodyStyle}">${day.body}</div>
       <div class="challenge-hud">HUD 口號：${day.hud}</div>
       <div style="display:flex;gap:8px;justify-content:center">
         <button id="btnStartChallenge" class="ov-btn today" style="width:180px;padding:11px 0">⚡ 開始挑戰</button>
