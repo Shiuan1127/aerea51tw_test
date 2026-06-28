@@ -890,7 +890,9 @@ async function page2026(){
   await sleep(800);
 
   const bw=addEl('div','',body); bw.style.margin='12px 0 16px';
-  bw.innerHTML=`<span class="badge b-cyan">SIGNAL LOCK CONFIRMED</span><span class="badge b-yellow">TARGET: 臺北大巨蛋</span><span class="badge b-purple">aespa 2026 TAIWAN</span>`;
+  bw.innerHTML=`<span class="badge b-cyan">SIGNAL LOCK CONFIRMED</span><span class="badge b-yellow">TARGET: 臺北大巨蛋</span><span class="badge b-purple"> aespa 2026 LIVE TOUR
+SYNK : COMPLaeXITY - in Taipei 
+</span>`;
   addEl('hr','rule',body);
 
   await addLine('這次，我們終於等到了。','t-cyan',body,25);
@@ -973,7 +975,7 @@ async function endPage(){
   await eLine('[SYSTEM]  偵測到未授權使用者完整存取機密檔案','t-red');
   await eLine('[SYSTEM]  使用者並非來自 aerea51tw 組織','t-red');
   await eLine('[SYSTEM]  IP ORIGIN   : UNKNOWN — TAIWAN SECTOR','t-white');
-  await eLine('[SYSTEM]  ACCESS LEVEL: FULL — 所有機密內容已被讀取','t-red');
+  await eLine('[SYSTEM]  ACCESS LEVEL: FULL — 機密內容已被讀取','t-red');
   await sleep(200);
   addEl('hr','rule',epanel);
 
