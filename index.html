@@ -1190,33 +1190,41 @@ function loop(){
     return b.life>0&&b.y<H+20;
   });
 
-  enemies=enemies.filter(e=>{
-    e.x+=e.vx;e.y+=e.vy;if(e.x<e.r||e.x>W-e.r)e.vx*=-1;
-    e.rot+=e.rotSpeed;if(e.hit>0)e.hit--;
-    if(e.y>H+40){if(superMode<=0&&sweepMode<=0){lives--;resetCombo();if(lives<=0){endGame();return false;}}return false;}
-    let dead=false;
-    bullets=bullets.filter(b=>{
-      if(dead)return false; // 已死的怪不再處理子彈碰撞
+  // ── 第一個 pass：子彈碰撞偵測，標記死亡 ──
+  // 先把全部子彈收集起來做碰撞，避免多個敵人互相干擾
+  let usedBulletIdx=new Set();
+  enemies.forEach(e=>{
+    if(e.dead)return;
+    bullets.forEach((b,bi)=>{
+      if(usedBulletIdx.has(bi)&&!b.laser)return;
       let dx=b.x-e.x,dy=b.y-e.y;
       if(Math.sqrt(dx*dx+dy*dy)<e.r+5){
+        if(!b.laser)usedBulletIdx.add(bi);
         e.hp--;e.hit=8;
         spawnParticles(b.x,b.y,e.type==='snake'?'#8800ff':e.type==='heart'?'#5599ff':e.type==='butterfly'?'#9933ff':'#ffdd00',4);
         if(e.hp<=0){
           spawnParticles(e.x,e.y,e.type==='snake'?'#8800ff':'#ffaa00',14);
           powerups.push({x:e.x,y:e.y,vy:1.5,type:'bullet'});
-          let baseScore=e.type==='snake'?25:12;
-          score+=baseScore*comboMult;
-          addCombo();
-          onEnemyKilled(e.type);
-          dead=true;
-          return b.laser;
+          score+=(e.type==='snake'?25:12)*comboMult;
+          addCombo();onEnemyKilled(e.type);
+          e.dead=true;
         }
-        return b.laser;
       }
-      return true;
     });
-    if(dead)return false; // 確保死亡敵人立即從陣列移除，不繪製
-    if(superMode<=0&&sweepMode<=0){let cdx=e.x-ship.x,cdy=e.y-ship.y;if(Math.sqrt(cdx*cdx+cdy*cdy)<e.r+16){lives--;resetCombo();spawnParticles(ship.x,ship.y,'#00ff88',10);if(lives<=0){endGame();return false;}return false;}}
+  });
+  // 移除被消耗的子彈
+  bullets=bullets.filter((b,bi)=>!usedBulletIdx.has(bi));
+
+  // ── 第二個 pass：移動、碰撞玩家、繪製、移除 ──
+  enemies=enemies.filter(e=>{
+    if(e.dead)return false; // 已死亡，直接移除不繪製
+    e.x+=e.vx;e.y+=e.vy;if(e.x<e.r||e.x>W-e.r)e.vx*=-1;
+    e.rot+=e.rotSpeed;if(e.hit>0)e.hit--;
+    if(e.y>H+40){if(superMode<=0&&sweepMode<=0){lives--;resetCombo();if(lives<=0){endGame();return false;}}return false;}
+    if(superMode<=0&&sweepMode<=0){
+      let cdx=e.x-ship.x,cdy=e.y-ship.y;
+      if(Math.sqrt(cdx*cdx+cdy*cdy)<e.r+16){lives--;resetCombo();spawnParticles(ship.x,ship.y,'#00ff88',10);if(lives<=0){endGame();return false;}return false;}
+    }
     if(e.type==='snake')drawSnake(e.x,e.y,e.rot,e.r,e.hit>0);
     else if(e.type==='heart')drawHeart(e.x,e.y,e.r,e.hit>0);
     else if(e.type==='moon')drawMoon(e.x,e.y,e.r,e.rot,e.hit>0);
