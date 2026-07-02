@@ -76,12 +76,14 @@ function triggerPOS(){
   if(!posReady)return;
   posReady=false;posActive=true;posTimer=90;posKillCount=0;
   shakeTimer=12;
+  let killed=0;
   enemies.forEach(e=>{
-    spawnParticles(e.x,e.y,'#ff44ff',12);
-    score+=(e.type==='snake'?25:12)*comboMult;
-    addCombo();onEnemyKilled(e.type);
+    spawnParticles(e.x,e.y,'#ff44ff',10);
+    score+=(e.type==='snake'?25:12); // 不套用 combo 倍率，不觸發 combo
+    killed++;
   });
   enemies=[];
+  // POS 不觸發 combo 也不升子彈等級，只加分
   if(lemonBoss){lemonBoss.hp=Math.max(1,lemonBoss.hp-15);lemonBoss.hit=20;}
   if(mamba){mamba.hp=Math.max(1,mamba.hp-20);mamba.hit=20;}
 }
@@ -1193,7 +1195,7 @@ function loop(){
     if(e.y>H+40){if(superMode<=0&&sweepMode<=0){lives--;resetCombo();if(lives<=0){endGame();return false;}}return false;}
     let dead=false;
     bullets=bullets.filter(b=>{
-      if(dead)return true;
+      if(dead)return false; // 已死的怪不再處理子彈碰撞
       let dx=b.x-e.x,dy=b.y-e.y;
       if(Math.sqrt(dx*dx+dy*dy)<e.r+5){
         e.hp--;e.hit=8;
@@ -1206,12 +1208,13 @@ function loop(){
           addCombo();
           onEnemyKilled(e.type);
           dead=true;
+          return b.laser;
         }
         return b.laser;
       }
       return true;
     });
-    if(dead)return false;
+    if(dead)return false; // 確保死亡敵人立即從陣列移除，不繪製
     if(superMode<=0&&sweepMode<=0){let cdx=e.x-ship.x,cdy=e.y-ship.y;if(Math.sqrt(cdx*cdx+cdy*cdy)<e.r+16){lives--;resetCombo();spawnParticles(ship.x,ship.y,'#00ff88',10);if(lives<=0){endGame();return false;}return false;}}
     if(e.type==='snake')drawSnake(e.x,e.y,e.rot,e.r,e.hit>0);
     else if(e.type==='heart')drawHeart(e.x,e.y,e.r,e.hit>0);
@@ -1305,14 +1308,19 @@ function loop(){
     autoFireTimer++;
     if(autoFireTimer>=AUTO_FIRE_INTERVAL){
       autoFireTimer=0;
-      // 朝最近的敵人射擊，沒有敵人就朝正上方
+      // 優先最近的小怪，沒有小怪才打 Boss
       let target=null,minD=99999;
-      enemies.forEach(e=>{let d=Math.abs(e.x-ship.x)+(e.y-ship.y)*0.5;if(d<minD&&e.y>0){minD=d;target=e;}});
-      if(lemonBoss)target={x:lemonBoss.x,y:lemonBoss.y};
-      if(mamba)target={x:mamba.x,y:mamba.y};
+      enemies.forEach(e=>{
+        if(e.y>0){
+          let d=Math.hypot(e.x-ship.x,e.y-ship.y);
+          if(d<minD){minD=d;target=e;}
+        }
+      });
+      // 沒有小怪才打 Boss
+      if(!target&&lemonBoss)target={x:lemonBoss.x,y:lemonBoss.y};
+      if(!target&&mamba)target={x:mamba.x,y:mamba.y};
       fireAt(target?target.x:ship.x,target?target.y:ship.y-200);
     }
-    // 自動射擊時角色閃爍指示燈
     if(fr%8<4){pr(ship.x-18,ship.y,4,4,'#00ff88');}
   }
 
