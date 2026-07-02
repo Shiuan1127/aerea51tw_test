@@ -190,7 +190,7 @@ function saveChallengeRecord(id,s){
 let bulletLevel=0;
 let bulletExp=0;
 // LV0→LV1→...→LV9，擊殺數需求遞增
-const bulletExpNeeded=[5,10,20,35,55,80,110,145,185];
+const bulletExpNeeded=[5,8,12,18,35,50,80,100,135];
 let sweepMode=0,sweepCount=0;
 // ── 連殺系統 ─────────────────────────────────────────────
 let combo=0;          // 目前連殺數
@@ -915,7 +915,6 @@ function drawLemonSlice(x,y,isGold){
 
 function drawPickup(p){
   if(p.type==='bullet'){
-    // 子彈增強劑：青色小方塊加上箭頭
     let bc=['#00ff88','#00ffcc','#ffdd00','#ff8800','#ff44ff'][Math.min(bulletLevel+1,4)];
     pr(p.x-7,p.y-7,14,14,bc);
     pr(p.x-4,p.y-4,8,8,'rgba(0,0,0,0.4)');
@@ -923,7 +922,26 @@ function drawPickup(p){
     pr(p.x-3,p.y-2,7,3,'#ffffff');
     return;
   }
+  if(p.type==='hp'){
+    // 血包：紅色愛心（玩家受傷掉落）
+    cx.fillStyle='#ff4466';cx.beginPath();
+    cx.arc(snap(p.x-4),snap(p.y-2),5,Math.PI,0);
+    cx.arc(snap(p.x+4),snap(p.y-2),5,Math.PI,0);
+    cx.lineTo(p.x,p.y+8);cx.closePath();cx.fill();
+    cx.fillStyle='#ffaacc';cx.fillRect(snap(p.x-3),snap(p.y-4),3,3);
+    return;
+  }
+  // lemon_green = 綠色檸檬片（Boss掉落，加子彈經驗）
+  // super = 金色檸檬片（Boss掉落，超級模式）
   drawLemonSlice(p.x,p.y,p.type==='super');
+  // 綠色檸檬片顯示經驗值
+  if(p.type==='lemon_green'&&p.expVal){
+    cx.font='bold 9px "Courier New"';
+    cx.fillStyle='#ffffff';
+    cx.textAlign='center';
+    cx.fillText('+'+p.expVal,snap(p.x),snap(p.y-13));
+    cx.textAlign='left';
+  }
 }
 
 function initGame(){
@@ -1230,6 +1248,7 @@ function loop(){
         if(e.hp<=0){
           spawnParticles(e.x,e.y,e.type==='snake'?'#8800ff':'#ffaa00',12);
           powerups.push({x:e.x,y:e.y,vy:1.5,type:'bullet'});
+          if(Math.random()<0.08) powerups.push({x:e.x+(Math.random()*20-10),y:e.y,vy:1.3,type:'hp'});
           score+=(e.type==='snake'?25:12)*(e.merged?4:1)*comboMult;
           addCombo();onEnemyKilled(e.type);
           killed=true;
@@ -1294,8 +1313,14 @@ function loop(){
     if(dmg){lb.hp--;lb.hit=8;shakeTimer=4;
       if(lb.hp<=0){
         spawnParticles(lb.x,lb.y,'#f5e000',30);
-        powerups.push({x:lb.x-15,y:lb.y,vy:1.4,type:'hp'});
-        powerups.push({x:lb.x+15,y:lb.y,vy:1.4,type:'super'});
+        if(Math.random()<0.05){
+          powerups.push({x:lb.x,y:lb.y,vy:1.4,type:'super'});
+        } else {
+          // 綠色檸檬片：隨機子彈經驗值，+5機率最高
+          const expTable=[5,5,5,5,5,5,10,10,10,15,15,15,20,20,30,30,40,50];
+          const expVal=expTable[Math.floor(Math.random()*expTable.length)];
+          powerups.push({x:lb.x,y:lb.y,vy:1.4,type:'lemon_green',expVal});
+        }
         score+=150;lemonBoss=null;lemonBossActive=false;
       }
     } else drawLemonBoss(lb);
@@ -1311,8 +1336,13 @@ function loop(){
     if(dmg){mb.hp--;mb.hit=8;shakeTimer=6;
       if(mb.hp<=0){
         spawnParticles(mb.x,mb.y,'#aa00ff',40);
-        powerups.push({x:mb.x-15,y:mb.y,vy:1.4,type:'hp'});
-        powerups.push({x:mb.x+15,y:mb.y,vy:1.4,type:'super'});
+        if(Math.random()<0.05){
+          powerups.push({x:mb.x,y:mb.y,vy:1.4,type:'super'});
+        } else {
+          const expTable=[5,5,5,5,5,5,10,10,10,15,15,15,20,20,30,30,40,50];
+          const expVal=expTable[Math.floor(Math.random()*expTable.length)];
+          powerups.push({x:mb.x,y:mb.y,vy:1.4,type:'lemon_green',expVal});
+        }
         score+=300;
         mambaKillCount++;
         // 第2次起分裂3隻小黑曼巴
@@ -1364,6 +1394,21 @@ function loop(){
     let dx=p.x-ship.x,dy=p.y-ship.y;
     if(Math.sqrt(dx*dx+dy*dy)<22){
       if(p.type==='hp'){lives=Math.min(9,lives+1);spawnParticles(ship.x,ship.y,'#00ff44',12);}
+      else if(p.type==='lemon_green'){
+        // 加子彈經驗值
+        let val=p.expVal||5;
+        if(bulletLevel<9){
+          bulletExp+=val;
+          while(bulletExp>=(bulletExpNeeded[bulletLevel]||999)&&bulletLevel<9){
+            bulletExp-=bulletExpNeeded[bulletLevel];
+            bulletLevel++;
+            spawnParticles(ship.x,ship.y,'#00ffcc',16);
+          }
+        }
+        spawnParticles(p.x,p.y,'#88ff44',8);
+        // 顯示+N浮字
+        eggMsg='+'+val+' 子彈經驗';eggMsgTimer=80;eggMsgColor='#88ff44';
+      }
       else if(p.type==='super'){
         if(bulletLevel>=9){
           // LV9：7秒清場模式，怪物自動死亡但獎勵保留
