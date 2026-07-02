@@ -43,7 +43,7 @@ html,body{background:#000010;display:flex;justify-content:center;align-items:fle
   <h2>★ ALIEN BLASTER ★</h2>
   <div class="a51" id="a51tag" style="cursor:pointer;user-select:none">AEREA51TW</div>
   <div class="best" id="bestDisp">最佳紀錄：0</div>
-  <div class="sub">點畫面 → 開啟/關閉自動射擊 ／ 拖動 → 移動<br>集滿15殺 → 右下角 P.O.S 可用<br>200分 → 檸檬王降臨<br>2000分 → 黑曼巴覺醒</div>
+  <div class="sub">按住畫面 → 持續射擊 ／ 拖動 → 移動<br>集滿15殺 → 左下角 P.O.S 出現<br>200分 → 檸檬王降臨<br>2000分 → 黑曼巴覺醒</div>
   <button id="btnNormal" class="ov-btn">▶ 一般模式 ◀</button>
   <button id="btnChallenge" class="ov-btn today">⚡ 今日挑戰 ◀</button>
   <div style="font-size:10px;color:#665500;margin-bottom:8px;font-family:'Courier New',monospace" id="todayLabel"></div>
@@ -1101,20 +1101,16 @@ function loop(){
   if(state!=='play')return;
   requestAnimationFrame(loop);
   fr++;
-  if(shakeTimer>0){cx.save();cx.translate((Math.random()-0.5)*4,(Math.random()-0.5)*4);shakeTimer--;}
   if(superMode>0) superMode--;
   // 掃空模式處理
   if(sweepMode>0){
     sweepMode--;
-    // 每60幀清場一次（共3次）
     if(sweepMode%60===0&&sweepCount>0){
       sweepCount--;
-      // 清除所有小怪（加分）
       enemies.forEach(e=>{spawnParticles(e.x,e.y,'#ff4444',10);score+=e.type==='snake'?25:12;onEnemyKilled(e.type);});
       enemies=[];
       shakeTimer=8;
     }
-    // 全畫面紅光掃描線
     if(fr%4<2){
       cx.fillStyle='rgba(255,50,50,0.08)';cx.fillRect(0,0,W,H);
       cx.strokeStyle='rgba(255,80,80,0.6)';cx.lineWidth=2;
@@ -1122,6 +1118,8 @@ function loop(){
       cx.beginPath();cx.moveTo(0,scanY);cx.lineTo(W,scanY);cx.stroke();
     }
   }
+
+  // 先清背景（不受 shake 影響）
   cx.fillStyle='#000010';cx.fillRect(0,0,W,H);
   stars.forEach(s=>{s.y+=s.sp;if(s.y>H)s.y=0;cx.fillStyle=(fr+s.ph)%26<13?'#ffffff':'#3333aa';cx.fillRect(snap(s.x),snap(s.y),s.s*P,s.s*P);});
 
@@ -1141,6 +1139,9 @@ function loop(){
   ship.x+=(ship.tx-ship.x)*0.14;ship.y+=(ship.ty-ship.y)*0.14;
   ship.x=Math.max(22,Math.min(W-22,ship.x));
   ship.y=Math.max(SHIP_MIN_Y,Math.min(SHIP_MAX_Y,ship.y));
+
+  // shake 只包住遊戲物件，不影響 UI 和背景清除
+  if(shakeTimer>0){cx.save();cx.translate((Math.random()-0.5)*4,(Math.random()-0.5)*4);shakeTimer--;}
 
   bullets=bullets.filter(b=>{b.x+=b.vx;b.y+=b.vy;return b.y>-20&&b.y<H+10&&b.x>-10&&b.x<W+10;});
   bullets.forEach(b=>drawChallengeBullet(b));
@@ -1308,18 +1309,8 @@ function loop(){
     autoFireTimer++;
     if(autoFireTimer>=AUTO_FIRE_INTERVAL){
       autoFireTimer=0;
-      // 優先最近的小怪，沒有小怪才打 Boss
-      let target=null,minD=99999;
-      enemies.forEach(e=>{
-        if(e.y>0){
-          let d=Math.hypot(e.x-ship.x,e.y-ship.y);
-          if(d<minD){minD=d;target=e;}
-        }
-      });
-      // 沒有小怪才打 Boss
-      if(!target&&lemonBoss)target={x:lemonBoss.x,y:lemonBoss.y};
-      if(!target&&mamba)target={x:mamba.x,y:mamba.y};
-      fireAt(target?target.x:ship.x,target?target.y:ship.y-200);
+      // 直射向正上方，不追蹤
+      fireAt(ship.x, ship.y-300);
     }
     if(fr%8<4){pr(ship.x-18,ship.y,4,4,'#00ff88');}
   }
@@ -1351,28 +1342,25 @@ function loop(){
   pr(ship.x-2,ship.y+16,4,ef?6:4,'#aaffcc');
   drawUFO(ship.x,ship.y);
 
+  // shake restore：遊戲物件全部畫完後才 restore
+  if(shakeTimer>0){cx.restore();}
+
+  // UI 層（不受 shake 影響）
   for(let i=0;i<Math.min(lives,9);i++)pr(W-12-i*14,H-18,10,10,'#ff4488');
 
-  // shakeTimer restore 要在繪製 UI 之前
-  if(shakeTimer>0)cx.restore();
-
-  // ── POS 按鈕（左下角，黑洞造型）──
-  let posX=10, posY=H-58, posR=26;
-  let posC=W/2-posX-posR; // 中心X
-  let posCX=posX+posR, posCY=posY+posR;
+  // ── POS 按鈕（左下角，充能完成才顯示）──
+  let posX=10,posY=H-58,posR=26;
+  let posCX=posX+posR,posCY=posY+posR;
   if(posReady){
     let pulse=fr%16<8;
-    // 外層光暈
     cx.globalAlpha=pulse?0.5:0.25;
     cx.fillStyle='#cc44ff';
     cx.beginPath();cx.arc(posCX,posCY,posR+6,0,Math.PI*2);cx.fill();
     cx.globalAlpha=1;
-    // 黑洞漩渦
     for(let i=3;i>=0;i--){
       cx.fillStyle=i===0?'#000000':i===1?'#330044':i===2?'#550066':'#7700aa';
       cx.beginPath();cx.arc(posCX,posCY,posR-i*4,0,Math.PI*2);cx.fill();
     }
-    // 旋轉環
     let rot=fr*0.08;
     cx.strokeStyle=pulse?'#ff44ff':'#cc44ff';cx.lineWidth=2;
     cx.save();cx.translate(posCX,posCY);cx.rotate(rot);
@@ -1380,25 +1368,10 @@ function loop(){
     cx.rotate(Math.PI);
     cx.beginPath();cx.arc(0,0,posR-10,0,Math.PI*1.5);cx.stroke();
     cx.restore();
-    // 文字
     cx.font='bold 10px "Courier New"';cx.fillStyle='#ff88ff';
     cx.textAlign='center';cx.fillText('P.O.S',posCX,posCY+4);cx.textAlign='left';
-  } else {
-    // 充能中：暗黑洞 + 進度弧
-    cx.fillStyle='#000000';
-    cx.beginPath();cx.arc(posCX,posCY,posR,0,Math.PI*2);cx.fill();
-    cx.strokeStyle='#330033';cx.lineWidth=2;
-    cx.beginPath();cx.arc(posCX,posCY,posR,0,Math.PI*2);cx.stroke();
-    // 進度弧
-    let pct=posKillCount/POS_KILL_NEEDED;
-    cx.strokeStyle='#882288';cx.lineWidth=3;
-    cx.beginPath();cx.arc(posCX,posCY,posR-3,-Math.PI/2,-Math.PI/2+Math.PI*2*pct);cx.stroke();
-    // 文字
-    cx.font='bold 9px "Courier New"';cx.fillStyle='#664466';
-    cx.textAlign='center';cx.fillText('P.O.S',posCX,posCY+3);
-    cx.font='8px "Courier New"';cx.fillStyle='#553355';
-    cx.fillText(posKillCount+'/15',posCX,posCY+13);cx.textAlign='left';
   }
+  // 充能中不顯示任何東西（隱藏）
 
   hud();
   drawEggOverlay();
@@ -1577,33 +1550,43 @@ function setupA51Click(){
   });
 }
 
-cv.addEventListener('mousedown',e=>{if(state!=='play')return;dragStart=getPos(e);touchMoved=false;});
-cv.addEventListener('mousemove',e=>{if(!dragStart||state!=='play')return;let p=getPos(e),dx=p.x-dragStart.x,dy=p.y-dragStart.y;if(Math.abs(dx)>3||Math.abs(dy)>3)touchMoved=true;ship.tx+=dx;ship.ty+=dy;dragStart=p;});
+cv.addEventListener('mousedown',e=>{
+  if(state!=='play')return;
+  dragStart=getPos(e);touchMoved=false;
+  autoFireOn=true;autoFireTimer=0; // 按下立即開始射擊
+});
+cv.addEventListener('mousemove',e=>{
+  if(!dragStart||state!=='play')return;
+  let p=getPos(e),dx=p.x-dragStart.x,dy=p.y-dragStart.y;
+  if(Math.abs(dx)>3||Math.abs(dy)>3)touchMoved=true;
+  ship.tx+=dx;ship.ty+=dy;dragStart=p;
+});
 cv.addEventListener('mouseup',e=>{
   if(state!=='play')return;
   let p=getPos(e);
-  if(!touchMoved&&dragStart){
-    if(posReady&&p.x<70&&p.y>H-70){
-      triggerPOS();
-    } else {
-      autoFireOn=!autoFireOn;
-    }
-  }
+  if(!touchMoved&&dragStart&&posReady&&p.x<70&&p.y>H-70){triggerPOS();}
+  autoFireOn=false; // 放開停止射擊
   dragStart=null;touchMoved=false;
 });
-cv.addEventListener('touchstart',e=>{e.preventDefault();if(state!=='play')return;dragStart=getPos(e);touchMoved=false;},{passive:false});
-cv.addEventListener('touchmove',e=>{e.preventDefault();if(!dragStart||state!=='play')return;let p=getPos(e),dx=p.x-dragStart.x,dy=p.y-dragStart.y;if(Math.abs(dx)>4||Math.abs(dy)>4)touchMoved=true;ship.tx+=dx;ship.ty+=dy;dragStart=p;},{passive:false});
+cv.addEventListener('touchstart',e=>{
+  e.preventDefault();if(state!=='play')return;
+  dragStart=getPos(e);touchMoved=false;
+  autoFireOn=true;autoFireTimer=0; // 觸碰立即開始射擊
+},{passive:false});
+cv.addEventListener('touchmove',e=>{
+  e.preventDefault();if(!dragStart||state!=='play')return;
+  let p=getPos(e),dx=p.x-dragStart.x,dy=p.y-dragStart.y;
+  if(Math.abs(dx)>4||Math.abs(dy)>4)touchMoved=true;
+  ship.tx+=dx;ship.ty+=dy;dragStart=p;
+},{passive:false});
 cv.addEventListener('touchend',e=>{
   e.preventDefault();if(state!=='play')return;
   if(!touchMoved&&dragStart){
     let rc=cv.getBoundingClientRect(),t=e.changedTouches[0];
     let px=(t.clientX-rc.left)*(W/rc.width),py=(t.clientY-rc.top)*(H/rc.height);
-    if(posReady&&px<70&&py>H-70){
-      triggerPOS();
-    } else {
-      autoFireOn=!autoFireOn;
-    }
+    if(posReady&&px<70&&py>H-70){triggerPOS();}
   }
+  autoFireOn=false; // 放開停止射擊
   dragStart=null;touchMoved=false;
 },{passive:false});
 
