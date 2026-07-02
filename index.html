@@ -1345,27 +1345,53 @@ function loop(){
 
   for(let i=0;i<Math.min(lives,9);i++)pr(W-12-i*14,H-18,10,10,'#ff4488');
 
-  // ── POS 按鈕（右下角）──
-  let posX=W-68,posY=H-52,posW=60,posH=28;
+  // shakeTimer restore 要在繪製 UI 之前
+  if(shakeTimer>0)cx.restore();
+
+  // ── POS 按鈕（左下角，黑洞造型）──
+  let posX=10, posY=H-58, posR=26;
+  let posC=W/2-posX-posR; // 中心X
+  let posCX=posX+posR, posCY=posY+posR;
   if(posReady){
-    // 充能完成：閃爍粉紫
     let pulse=fr%16<8;
-    cx.fillStyle=pulse?'#ff44ff':'#cc22cc';
-    cx.fillRect(posX,posY,posW,posH);
-    cx.strokeStyle='#ffffff';cx.lineWidth=2;cx.strokeRect(posX,posY,posW,posH);
-    cx.font='bold 11px "Courier New"';cx.fillStyle='#fff';cx.textAlign='center';
-    cx.fillText('P.O.S',posX+posW/2,posY+18);cx.textAlign='left';
+    // 外層光暈
+    cx.globalAlpha=pulse?0.5:0.25;
+    cx.fillStyle='#cc44ff';
+    cx.beginPath();cx.arc(posCX,posCY,posR+6,0,Math.PI*2);cx.fill();
+    cx.globalAlpha=1;
+    // 黑洞漩渦
+    for(let i=3;i>=0;i--){
+      cx.fillStyle=i===0?'#000000':i===1?'#330044':i===2?'#550066':'#7700aa';
+      cx.beginPath();cx.arc(posCX,posCY,posR-i*4,0,Math.PI*2);cx.fill();
+    }
+    // 旋轉環
+    let rot=fr*0.08;
+    cx.strokeStyle=pulse?'#ff44ff':'#cc44ff';cx.lineWidth=2;
+    cx.save();cx.translate(posCX,posCY);cx.rotate(rot);
+    cx.beginPath();cx.arc(0,0,posR-4,0,Math.PI*1.5);cx.stroke();
+    cx.rotate(Math.PI);
+    cx.beginPath();cx.arc(0,0,posR-10,0,Math.PI*1.5);cx.stroke();
+    cx.restore();
+    // 文字
+    cx.font='bold 10px "Courier New"';cx.fillStyle='#ff88ff';
+    cx.textAlign='center';cx.fillText('P.O.S',posCX,posCY+4);cx.textAlign='left';
   } else {
-    // 進度條
-    cx.fillStyle='rgba(0,0,0,0.5)';cx.fillRect(posX,posY,posW,posH);
-    cx.strokeStyle='#664466';cx.lineWidth=1;cx.strokeRect(posX,posY,posW,posH);
+    // 充能中：暗黑洞 + 進度弧
+    cx.fillStyle='#000000';
+    cx.beginPath();cx.arc(posCX,posCY,posR,0,Math.PI*2);cx.fill();
+    cx.strokeStyle='#330033';cx.lineWidth=2;
+    cx.beginPath();cx.arc(posCX,posCY,posR,0,Math.PI*2);cx.stroke();
+    // 進度弧
     let pct=posKillCount/POS_KILL_NEEDED;
-    cx.fillStyle='#882288';cx.fillRect(posX+2,posY+2,Math.round((posW-4)*pct),posH-4);
-    cx.font='bold 9px "Courier New"';cx.fillStyle='#aa88aa';cx.textAlign='center';
-    cx.fillText('P.O.S '+posKillCount+'/15',posX+posW/2,posY+16);cx.textAlign='left';
+    cx.strokeStyle='#882288';cx.lineWidth=3;
+    cx.beginPath();cx.arc(posCX,posCY,posR-3,-Math.PI/2,-Math.PI/2+Math.PI*2*pct);cx.stroke();
+    // 文字
+    cx.font='bold 9px "Courier New"';cx.fillStyle='#664466';
+    cx.textAlign='center';cx.fillText('P.O.S',posCX,posCY+3);
+    cx.font='8px "Courier New"';cx.fillStyle='#553355';
+    cx.fillText(posKillCount+'/15',posCX,posCY+13);cx.textAlign='left';
   }
 
-  if(shakeTimer>0)cx.restore();
   hud();
   drawEggOverlay();
 }
@@ -1549,7 +1575,7 @@ cv.addEventListener('mouseup',e=>{
   if(state!=='play')return;
   let p=getPos(e);
   if(!touchMoved&&dragStart){
-    if(posReady&&p.x>W-80&&p.y>H-55){
+    if(posReady&&p.x<70&&p.y>H-70){
       triggerPOS();
     } else {
       autoFireOn=!autoFireOn;
@@ -1564,7 +1590,7 @@ cv.addEventListener('touchend',e=>{
   if(!touchMoved&&dragStart){
     let rc=cv.getBoundingClientRect(),t=e.changedTouches[0];
     let px=(t.clientX-rc.left)*(W/rc.width),py=(t.clientY-rc.top)*(H/rc.height);
-    if(posReady&&px>W-80&&py>H-55){
+    if(posReady&&px<70&&py>H-70){
       triggerPOS();
     } else {
       autoFireOn=!autoFireOn;
