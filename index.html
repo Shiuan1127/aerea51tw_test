@@ -43,7 +43,7 @@ html,body{background:#000010;display:flex;justify-content:center;align-items:fle
   <h2>★ ALIEN BLASTER ★</h2>
   <div class="a51" id="a51tag" style="cursor:pointer;user-select:none">AEREA51TW</div>
   <div class="best" id="bestDisp">最佳紀錄：0</div>
-  <div class="sub">點角色 → 開啟/關閉自動射擊 ／ 拖動 → 移動<br>集滿15殺 → P.O.S 攻擊可用<br>200分 → 檸檬王降臨<br>2000分 → 黑曼巴覺醒</div>
+  <div class="sub">點畫面 → 開啟/關閉自動射擊 ／ 拖動 → 移動<br>集滿15殺 → 右下角 P.O.S 可用<br>200分 → 檸檬王降臨<br>2000分 → 黑曼巴覺醒</div>
   <button id="btnNormal" class="ov-btn">▶ 一般模式 ◀</button>
   <button id="btnChallenge" class="ov-btn today">⚡ 今日挑戰 ◀</button>
   <div style="font-size:10px;color:#665500;margin-bottom:8px;font-family:'Courier New',monospace" id="todayLabel"></div>
@@ -1549,13 +1549,10 @@ cv.addEventListener('mouseup',e=>{
   if(state!=='play')return;
   let p=getPos(e);
   if(!touchMoved&&dragStart){
-    // 點在角色附近（±60px）→ 自動射擊切換
-    let dx=p.x-ship.x,dy=p.y-ship.y;
-    if(Math.sqrt(dx*dx+dy*dy)<60){
-      autoFireOn=!autoFireOn;
+    if(posReady&&p.x>W-80&&p.y>H-55){
+      triggerPOS();
     } else {
-      // 點在 POS 按鈕區域
-      if(posReady&&p.x>W-80&&p.y>H-50){triggerPOS();}
+      autoFireOn=!autoFireOn;
     }
   }
   dragStart=null;touchMoved=false;
@@ -1567,11 +1564,10 @@ cv.addEventListener('touchend',e=>{
   if(!touchMoved&&dragStart){
     let rc=cv.getBoundingClientRect(),t=e.changedTouches[0];
     let px=(t.clientX-rc.left)*(W/rc.width),py=(t.clientY-rc.top)*(H/rc.height);
-    let dx=px-ship.x,dy=py-ship.y;
-    if(Math.sqrt(dx*dx+dy*dy)<60){
-      autoFireOn=!autoFireOn;
-    } else if(posReady&&px>W-80&&py>H-50){
+    if(posReady&&px>W-80&&py>H-55){
       triggerPOS();
+    } else {
+      autoFireOn=!autoFireOn;
     }
   }
   dragStart=null;touchMoved=false;
