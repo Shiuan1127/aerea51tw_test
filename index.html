@@ -189,6 +189,7 @@ function saveChallengeRecord(id,s){
 }
 let bulletLevel=0;
 let bulletExp=0;
+let spreadLevel=0; // 子彈擴散等級 0=1束 1=2束 2=3束
 // LV0→LV1→...→LV9，擊殺數需求遞增
 const bulletExpNeeded=[5,8,12,18,35,50,80,100,135];
 let sweepMode=0,sweepCount=0;
@@ -730,6 +731,20 @@ function drawNormalBullet(b){
   let sweepCol='#ff2222',superCol='#ffee00';
   let isRainbow=secretModeActive&&!challengeMode;
   let sz=b.bsize||'small';
+  // 爆米花子彈：不規則白色膨脹塊
+  if(sz==='popcorn'){
+    cx.save();cx.translate(snap(b.x),snap(b.y));
+    cx.fillStyle='#fffef0';
+    cx.beginPath();cx.arc(0,0,5,0,Math.PI*2);cx.fill();
+    cx.fillStyle='#fff8e0';
+    cx.beginPath();cx.arc(3,2,4,0,Math.PI*2);cx.fill();
+    cx.beginPath();cx.arc(-3,2,3,0,Math.PI*2);cx.fill();
+    cx.beginPath();cx.arc(0,-4,3,0,Math.PI*2);cx.fill();
+    cx.fillStyle='#ddcc88';
+    cx.beginPath();cx.arc(0,0,2,0,Math.PI*2);cx.fill();
+    cx.restore();
+    return;
+  }
   if(b.laser){
     let thick=b.thick;
     let coreW=thick?14:8, beamH=thick?72:62;
@@ -922,6 +937,51 @@ function drawPickup(p){
     pr(p.x-3,p.y-2,7,3,'#ffffff');
     return;
   }
+  if(p.type==='mint'){
+    // 薄荷巧克力冰淇淋：大圓球+巧克力碎片
+    cx.save();
+    // 主體圓球（薄荷綠）
+    cx.fillStyle='#66eebb';
+    cx.beginPath();cx.arc(snap(p.x),snap(p.y-2),11,0,Math.PI*2);cx.fill();
+    // 陰影下半
+    cx.fillStyle='#44cc88';
+    cx.beginPath();cx.arc(snap(p.x),snap(p.y-2),11,Math.PI*0.1,Math.PI*0.9);cx.fill();
+    // 高光
+    cx.fillStyle='#aaffdd';
+    cx.beginPath();cx.arc(snap(p.x-3),snap(p.y-6),4,0,Math.PI*2);cx.fill();
+    cx.fillStyle='#ffffff';
+    cx.beginPath();cx.arc(snap(p.x-4),snap(p.y-7),2,0,Math.PI*2);cx.fill();
+    // 巧克力碎片
+    let chips=[[-4,-5,4,2],[ 2,-3,3,2],[-2,-1,5,2],[-5, 0,3,2],[3,-6,4,2],[-1,3,4,2]];
+    chips.forEach(([cx2,cy2,cw,ch])=>{cx.fillStyle='#331100';cx.fillRect(snap(p.x+cx2),snap(p.y+cy2),cw,ch);});
+    // 底部小平台
+    cx.fillStyle='#55cc99';
+    cx.beginPath();cx.ellipse(snap(p.x),snap(p.y+9),8,3,0,0,Math.PI*2);cx.fill();
+    cx.restore();
+    return;
+  }
+  if(p.type==='corn'){
+    // 整根玉米：綠色外葉+黃色玉米粒
+    // 外葉（綠）
+    cx.fillStyle='#55bb33';
+    cx.beginPath();cx.ellipse(snap(p.x-5),snap(p.y),4,13,(-Math.PI/5),0,Math.PI*2);cx.fill();
+    cx.beginPath();cx.ellipse(snap(p.x+5),snap(p.y),4,13,(Math.PI/5),0,Math.PI*2);cx.fill();
+    cx.fillStyle='#77dd44';
+    cx.beginPath();cx.ellipse(snap(p.x-3),snap(p.y),2,11,(-Math.PI/6),0,Math.PI*2);cx.fill();
+    // 玉米主體（米黃）
+    cx.fillStyle='#f5c518';
+    cx.beginPath();cx.ellipse(snap(p.x),snap(p.y+2),6,11,0,0,Math.PI*2);cx.fill();
+    // 玉米粒（深黃點陣）
+    let rows=5,cols=3;
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+      cx.fillStyle=r%2===0?'#e6b800':'#ffd700';
+      cx.beginPath();cx.arc(snap(p.x-4+c*4),snap(p.y-8+r*4),2,0,Math.PI*2);cx.fill();
+    }
+    // 頂部鬚絲
+    cx.strokeStyle='#cc8800';cx.lineWidth=1;
+    for(let i=-2;i<=2;i++){cx.beginPath();cx.moveTo(snap(p.x+i*2),snap(p.y-11));cx.lineTo(snap(p.x+i*2+(i*1)),snap(p.y-16));cx.stroke();}
+    return;
+  }
   if(p.type==='hp'){
     // 血包：紅色愛心（玩家受傷掉落）
     cx.fillStyle='#ff4466';cx.beginPath();
@@ -945,7 +1005,7 @@ function drawPickup(p){
 }
 
 function initGame(){
-  score=0;lives=3;fr=0;spawnIv=90;spawnTimer=0;bulletLevel=0;bulletExp=0;sweepMode=0;sweepCount=0;
+  score=0;lives=3;fr=0;spawnIv=90;spawnTimer=0;bulletLevel=0;bulletExp=0;spreadLevel=0;sweepMode=0;sweepCount=0;
   combo=0;comboTimer=0;comboMult=1;comboFlashMsg='';comboFlashTimer=0;
   lemonBossActive=false;mambaActive=false;lemonBoss=null;mamba=null;shakeTimer=0;superMode=0;
   posKillCount=0;posReady=false;posActive=false;posTimer=0;autoFireTimer=0;
@@ -964,7 +1024,7 @@ function initGame(){
 }
 
 function spawnEnemy(){
-  let lv=Math.floor(fr/700);
+  let lv=Math.min(5,Math.floor(fr/2000)); // 每約33秒升一級，最多5級
   let t;
   if(challengeMode&&todayChallenge){
     const et=todayChallenge.enemy;
@@ -997,32 +1057,46 @@ function fireAt(tx,ty){
   if(sweepMode>0) return;
   let dx=tx-ship.x,dy=ty-ship.y,len=Math.sqrt(dx*dx+dy*dy)||1,sp=16;
   let nx=dx/len,ny=dy/len;
-  // 超級模式：升2級，MAX(LV9)→掃空
-  let lvl;
-  if(superMode>0){
-    if(bulletLevel>=9) lvl=9; // 由外部觸發掃空
-    else lvl=Math.min(9,bulletLevel+2);
-  } else {
-    lvl=bulletLevel;
-  }
-  // 子彈尺寸對照：
-  // 小 big:false  w4 h10
-  // 中 big:'mid'  w6 h14
-  // 大 big:'large' w8 h18
-  // 巨 big:'huge'  w11 h22
-  // 雷射細 laser:true thick:false
-  // 雷射粗 laser:true thick:true
+  let lvl=superMode>0?(bulletLevel>=9?9:Math.min(9,bulletLevel+2)):bulletLevel;
   const sizes={0:'small',1:'small',2:'mid',3:'mid',4:'large',5:'large',6:'huge',7:'huge',8:'laser_thin',9:'laser_thick'};
   const counts={0:1,1:3,2:1,3:3,4:1,5:3,6:1,7:3,8:1,9:1};
   const sz=sizes[lvl]||'small';
   const ct=counts[lvl]||1;
   const isLaser=sz.startsWith('laser');
-  const offsets=ct===1?[0]:ct===3?[-9,0,9]:[-9,0,9];
-  const spds=ct===1?[sp]:ct===3?[sp,sp,sp-1]:[];
+  const offsets=ct===1?[0]:[-9,0,9];
+
+  // 基本發射方向（正上方）
+  function shoot(ox,vx,vy){
+    let yoff=-14;
+    if(isLaser) yoff=-20;
+    bullets.push({x:ship.x+ox,y:ship.y+yoff,vx,vy,laser:isLaser,thick:sz==='laser_thick',bsize:sz});
+  }
+
+  // spreadLevel 0：原始方向
+  // spreadLevel 1：直線 + 左右各一道斜線
+  // spreadLevel 2：直線 + 左右斜線 + 更外側斜線
+
   for(let i=0;i<ct;i++){
-    let ox=offsets[i], spd=sp-(i===0?0:1);
-    let yoff=i===0?-20:(isLaser?-16:-14);
-    bullets.push({x:ship.x+ox,y:ship.y+yoff,vx:nx*spd,vy:ny*spd,laser:isLaser,thick:sz==='laser_thick',bsize:sz});
+    let ox=ct===1?0:offsets[i];
+    let spd=sp-(i===1&&ct===3?1:0);
+    shoot(ox, nx*spd, ny*spd);
+  }
+
+  if(spreadLevel>=1){
+    // 斜線：左右各偏 20 度
+    let ang1=-Math.PI/9, ang2=Math.PI/9;
+    let cos1=Math.cos(ang1),sin1=Math.sin(ang1),cos2=Math.cos(ang2),sin2=Math.sin(ang2);
+    // 正上方方向旋轉
+    let bvx=nx*sp,bvy=ny*sp;
+    shoot(-8, bvx*cos1-bvy*sin1, bvx*sin1+bvy*cos1);
+    shoot(8,  bvx*cos2-bvy*sin2, bvx*sin2+bvy*cos2);
+  }
+  if(spreadLevel>=2){
+    // 更外側：左右各偏 35 度
+    let ang3=-Math.PI/5, ang4=Math.PI/5;
+    let bvx=nx*sp,bvy=ny*sp;
+    shoot(-16, bvx*Math.cos(ang3)-bvy*Math.sin(ang3), bvx*Math.sin(ang3)+bvy*Math.cos(ang3));
+    shoot(16,  bvx*Math.cos(ang4)-bvy*Math.sin(ang4), bvx*Math.sin(ang4)+bvy*Math.cos(ang4));
   }
 }
 
@@ -1183,7 +1257,11 @@ function loop(){
     lastMambaThreshold=mambaThresh;spawnMamba();
   }
   // 小怪持續生成（不再受黑曼巴影響）
-  spawnTimer++;if(spawnTimer>=spawnIv){spawnEnemy();spawnTimer=0;if(fr>400)spawnIv=Math.max(38,spawnIv-1);}
+  spawnTimer++;if(spawnTimer>=spawnIv){
+    if(enemies.length<20)spawnEnemy(); // 場上最多20隻，避免爆量
+    spawnTimer=0;
+    if(fr>400)spawnIv=Math.max(55,spawnIv-1);
+  }
 
   // ── 合成系統：同類型5隻→中型怪（3500分後，一般模式才觸發）──
   if(!challengeMode && score>=3500){
@@ -1243,12 +1321,17 @@ function loop(){
       if(killed)return true; // 這隻怪已死，不再消耗子彈
       let dx=b.x-e.x,dy=b.y-e.y;
       if(Math.sqrt(dx*dx+dy*dy)<e.r+5){
-        e.hp--;e.hit=8;
+        // 傷害依子彈等級：LV0-1=1，LV2-3=2，LV4-5=3，LV6-7=4，LV8-9=5
+        const bulletDmg=[1,1,2,2,3,3,4,4,5,5];
+        let dmgVal=b.dmg||bulletDmg[Math.min(bulletLevel,9)];
+        e.hp-=dmgVal;e.hit=8;
         spawnParticles(b.x,b.y,'#ffdd00',3);
         if(e.hp<=0){
           spawnParticles(e.x,e.y,e.type==='snake'?'#8800ff':'#ffaa00',12);
           powerups.push({x:e.x,y:e.y,vy:1.5,type:'bullet'});
           if(Math.random()<0.08) powerups.push({x:e.x+(Math.random()*20-10),y:e.y,vy:1.3,type:'hp'});
+          if(Math.random()<0.02&&spreadLevel<2) powerups.push({x:e.x+(Math.random()*20-10),y:e.y,vy:1.4,type:'mint'});
+          if(Math.random()<0.04) powerups.push({x:e.x+(Math.random()*20-10),y:e.y,vy:1.4,type:'corn'});
           score+=(e.type==='snake'?25:12)*(e.merged?4:1)*comboMult;
           addCombo();onEnemyKilled(e.type);
           killed=true;
@@ -1394,6 +1477,36 @@ function loop(){
     let dx=p.x-ship.x,dy=p.y-ship.y;
     if(Math.sqrt(dx*dx+dy*dy)<22){
       if(p.type==='hp'){lives=Math.min(9,lives+1);spawnParticles(ship.x,ship.y,'#00ff44',12);}
+      else if(p.type==='mint'){
+        // 薄荷巧克力：子彈擴散升一級
+        spreadLevel=Math.min(2,spreadLevel+1);
+        spawnParticles(p.x,p.y,'#44ffaa',16);
+        triggerMsg(spreadLevel===1?'🍫 子彈擴散 ×2！':'🍫 子彈擴散 ×3！MAX！','#44ffcc');
+      }
+      else if(p.type==='corn'){
+        const bulletDmg=[1,1,2,2,3,3,4,4,5,5];
+        let dmgVal=bulletDmg[Math.min(bulletLevel,9)];
+        // 爆炸特效：大量黃白粒子
+        spawnParticles(p.x,p.y,'#ffee88',25);
+        spawnParticles(p.x,p.y,'#ffffff',15);
+        spawnParticles(p.x,p.y,'#ffcc44',10);
+        shakeTimer=8;
+        // 大閃光
+        cx.save();cx.globalAlpha=0.6;cx.fillStyle='#ffffaa';
+        cx.beginPath();cx.arc(snap(p.x),snap(p.y),40,0,Math.PI*2);cx.fill();
+        cx.globalAlpha=1;cx.restore();
+        // 射出 20 顆爆米花（更多更密）
+        for(let i=0;i<20;i++){
+          let a=(i/20)*Math.PI*2+Math.random()*0.3;
+          let spd=2.5+Math.random()*4;
+          bullets.push({
+            x:p.x,y:p.y,
+            vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
+            laser:false,big:false,bsize:'popcorn',dmg:dmgVal
+          });
+        }
+        triggerMsg('🌽 爆米花！','#ffee44');
+      }
       else if(p.type==='lemon_green'){
         // 加子彈經驗值
         let val=p.expVal||5;
