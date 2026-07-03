@@ -456,9 +456,9 @@ function drawUFO(x,y){
     if(id==='giselle') return drawGiselleIP(x,y);
     if(id==='winter') return drawWinterIP(x,y);
     if(id==='ningning') return drawNingningIP(x,y);
-    if(id==='ae') return drawAeRow(W/2,y);
-    if(id==='kwangya') return drawColorRow(W/2,y);
-    if(id==='lemon') return drawLemonRow(W/2,y);
+    if(id==='ae') return drawAeRow(x,y);
+    if(id==='kwangya') return drawColorRow(x,y);
+    if(id==='lemon') return drawLemonRow(x,y);
   }
   // 一般模式 — 原版外星人UFO
   pr(x-10,y-18,20,16,'#22aa22');
@@ -928,8 +928,19 @@ function drawLemonSlice(x,y,isGold){
   pr(x-1,y-R,2,2,skin);pr(x-1,y+R-2,2,2,skin);
 }
 
+function drawPickupGlow(x,y,r){
+  let pulse=0.22+Math.sin(fr*0.12)*0.18;
+  cx.globalAlpha=pulse;
+  cx.fillStyle='#ffffff';
+  cx.beginPath();cx.arc(snap(x),snap(y),r+8,0,Math.PI*2);cx.fill();
+  cx.globalAlpha=pulse*0.5;
+  cx.beginPath();cx.arc(snap(x),snap(y),r+14,0,Math.PI*2);cx.fill();
+  cx.globalAlpha=1;
+}
+
 function drawPickup(p){
   if(p.type==='bullet'){
+    drawPickupGlow(p.x,p.y,10);
     let bc=['#00ff88','#00ffcc','#ffdd00','#ff8800','#ff44ff'][Math.min(bulletLevel+1,4)];
     pr(p.x-7,p.y-7,14,14,bc);
     pr(p.x-4,p.y-4,8,8,'rgba(0,0,0,0.4)');
@@ -938,52 +949,43 @@ function drawPickup(p){
     return;
   }
   if(p.type==='mint'){
-    // 薄荷巧克力冰淇淋：大圓球+巧克力碎片
+    drawPickupGlow(p.x,p.y,11);
     cx.save();
-    // 主體圓球（薄荷綠）
     cx.fillStyle='#66eebb';
     cx.beginPath();cx.arc(snap(p.x),snap(p.y-2),11,0,Math.PI*2);cx.fill();
-    // 陰影下半
     cx.fillStyle='#44cc88';
     cx.beginPath();cx.arc(snap(p.x),snap(p.y-2),11,Math.PI*0.1,Math.PI*0.9);cx.fill();
-    // 高光
     cx.fillStyle='#aaffdd';
     cx.beginPath();cx.arc(snap(p.x-3),snap(p.y-6),4,0,Math.PI*2);cx.fill();
     cx.fillStyle='#ffffff';
     cx.beginPath();cx.arc(snap(p.x-4),snap(p.y-7),2,0,Math.PI*2);cx.fill();
-    // 巧克力碎片
-    let chips=[[-4,-5,4,2],[ 2,-3,3,2],[-2,-1,5,2],[-5, 0,3,2],[3,-6,4,2],[-1,3,4,2]];
+    let chips=[[-4,-5,4,2],[2,-3,3,2],[-2,-1,5,2],[-5,0,3,2],[3,-6,4,2],[-1,3,4,2]];
     chips.forEach(([cx2,cy2,cw,ch])=>{cx.fillStyle='#331100';cx.fillRect(snap(p.x+cx2),snap(p.y+cy2),cw,ch);});
-    // 底部小平台
     cx.fillStyle='#55cc99';
     cx.beginPath();cx.ellipse(snap(p.x),snap(p.y+9),8,3,0,0,Math.PI*2);cx.fill();
     cx.restore();
     return;
   }
   if(p.type==='corn'){
-    // 整根玉米：綠色外葉+黃色玉米粒
-    // 外葉（綠）
+    drawPickupGlow(p.x,p.y,13);
     cx.fillStyle='#55bb33';
     cx.beginPath();cx.ellipse(snap(p.x-5),snap(p.y),4,13,(-Math.PI/5),0,Math.PI*2);cx.fill();
     cx.beginPath();cx.ellipse(snap(p.x+5),snap(p.y),4,13,(Math.PI/5),0,Math.PI*2);cx.fill();
     cx.fillStyle='#77dd44';
     cx.beginPath();cx.ellipse(snap(p.x-3),snap(p.y),2,11,(-Math.PI/6),0,Math.PI*2);cx.fill();
-    // 玉米主體（米黃）
     cx.fillStyle='#f5c518';
     cx.beginPath();cx.ellipse(snap(p.x),snap(p.y+2),6,11,0,0,Math.PI*2);cx.fill();
-    // 玉米粒（深黃點陣）
     let rows=5,cols=3;
     for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
       cx.fillStyle=r%2===0?'#e6b800':'#ffd700';
       cx.beginPath();cx.arc(snap(p.x-4+c*4),snap(p.y-8+r*4),2,0,Math.PI*2);cx.fill();
     }
-    // 頂部鬚絲
     cx.strokeStyle='#cc8800';cx.lineWidth=1;
     for(let i=-2;i<=2;i++){cx.beginPath();cx.moveTo(snap(p.x+i*2),snap(p.y-11));cx.lineTo(snap(p.x+i*2+(i*1)),snap(p.y-16));cx.stroke();}
     return;
   }
   if(p.type==='hp'){
-    // 血包：紅色愛心（玩家受傷掉落）
+    drawPickupGlow(p.x,p.y,9);
     cx.fillStyle='#ff4466';cx.beginPath();
     cx.arc(snap(p.x-4),snap(p.y-2),5,Math.PI,0);
     cx.arc(snap(p.x+4),snap(p.y-2),5,Math.PI,0);
@@ -991,10 +993,9 @@ function drawPickup(p){
     cx.fillStyle='#ffaacc';cx.fillRect(snap(p.x-3),snap(p.y-4),3,3);
     return;
   }
-  // lemon_green = 綠色檸檬片（Boss掉落，加子彈經驗）
-  // super = 金色檸檬片（Boss掉落，超級模式）
+  // lemon_green / super
+  drawPickupGlow(p.x,p.y,10);
   drawLemonSlice(p.x,p.y,p.type==='super');
-  // 綠色檸檬片顯示經驗值
   if(p.type==='lemon_green'&&p.expVal){
     cx.font='bold 9px "Courier New"';
     cx.fillStyle='#ffffff';
@@ -1055,8 +1056,6 @@ function spawnMamba(){mambaActive=true;mamba={x:W/2,y:-60,r:30,hp:80,maxHp:80,hi
 
 function fireAt(tx,ty){
   if(sweepMode>0) return;
-  let dx=tx-ship.x,dy=ty-ship.y,len=Math.sqrt(dx*dx+dy*dy)||1,sp=16;
-  let nx=dx/len,ny=dy/len;
   let lvl=superMode>0?(bulletLevel>=9?9:Math.min(9,bulletLevel+2)):bulletLevel;
   const sizes={0:'small',1:'small',2:'mid',3:'mid',4:'large',5:'large',6:'huge',7:'huge',8:'laser_thin',9:'laser_thick'};
   const counts={0:1,1:3,2:1,3:3,4:1,5:3,6:1,7:3,8:1,9:1};
@@ -1065,38 +1064,32 @@ function fireAt(tx,ty){
   const isLaser=sz.startsWith('laser');
   const offsets=ct===1?[0]:[-9,0,9];
 
-  // 基本發射方向（正上方）
+  let dx=tx-ship.x,dy=ty-ship.y;
+  let len=Math.sqrt(dx*dx+dy*dy)||1,sp=16;
+  let nx=dx/len,ny=dy/len;
+
   function shoot(ox,vx,vy){
-    let yoff=-14;
-    if(isLaser) yoff=-20;
+    let yoff=isLaser?-20:-14;
     bullets.push({x:ship.x+ox,y:ship.y+yoff,vx,vy,laser:isLaser,thick:sz==='laser_thick',bsize:sz});
   }
-
-  // spreadLevel 0：原始方向
-  // spreadLevel 1：直線 + 左右各一道斜線
-  // spreadLevel 2：直線 + 左右斜線 + 更外側斜線
 
   for(let i=0;i<ct;i++){
     let ox=ct===1?0:offsets[i];
     let spd=sp-(i===1&&ct===3?1:0);
-    shoot(ox, nx*spd, ny*spd);
+    shoot(ox,nx*spd,ny*spd);
   }
 
   if(spreadLevel>=1){
-    // 斜線：左右各偏 20 度
-    let ang1=-Math.PI/9, ang2=Math.PI/9;
-    let cos1=Math.cos(ang1),sin1=Math.sin(ang1),cos2=Math.cos(ang2),sin2=Math.sin(ang2);
-    // 正上方方向旋轉
     let bvx=nx*sp,bvy=ny*sp;
-    shoot(-8, bvx*cos1-bvy*sin1, bvx*sin1+bvy*cos1);
-    shoot(8,  bvx*cos2-bvy*sin2, bvx*sin2+bvy*cos2);
+    let a1=-Math.PI/9,a2=Math.PI/9;
+    shoot(-8, bvx*Math.cos(a1)-bvy*Math.sin(a1), bvx*Math.sin(a1)+bvy*Math.cos(a1));
+    shoot( 8, bvx*Math.cos(a2)-bvy*Math.sin(a2), bvx*Math.sin(a2)+bvy*Math.cos(a2));
   }
   if(spreadLevel>=2){
-    // 更外側：左右各偏 35 度
-    let ang3=-Math.PI/5, ang4=Math.PI/5;
     let bvx=nx*sp,bvy=ny*sp;
-    shoot(-16, bvx*Math.cos(ang3)-bvy*Math.sin(ang3), bvx*Math.sin(ang3)+bvy*Math.cos(ang3));
-    shoot(16,  bvx*Math.cos(ang4)-bvy*Math.sin(ang4), bvx*Math.sin(ang4)+bvy*Math.cos(ang4));
+    let a3=-Math.PI/5,a4=Math.PI/5;
+    shoot(-16, bvx*Math.cos(a3)-bvy*Math.sin(a3), bvx*Math.sin(a3)+bvy*Math.cos(a3));
+    shoot( 16, bvx*Math.cos(a4)-bvy*Math.sin(a4), bvx*Math.sin(a4)+bvy*Math.cos(a4));
   }
 }
 
@@ -1286,6 +1279,7 @@ function loop(){
 
   ship.x+=(ship.tx-ship.x)*0.14;ship.y+=(ship.ty-ship.y)*0.14;
   ship.x=Math.max(22,Math.min(W-22,ship.x));
+  // 多角色模式不需要額外邊界限制，圖示可以超出畫面
   ship.y=Math.max(SHIP_MIN_Y,Math.min(SHIP_MAX_Y,ship.y));
 
   // shake：每幀都 save，確保 restore 一定執行
@@ -1345,7 +1339,9 @@ function loop(){
     // 碰撞玩家
     if(superMode<=0&&sweepMode<=0){
       let cdx=e.x-ship.x,cdy=e.y-ship.y;
-      if(Math.sqrt(cdx*cdx+cdy*cdy)<e.r+16){
+      // ae Day：玩家碰撞範圍只有中間外星飛船（半徑20）
+      let playerR=challengeMode&&todayChallenge&&todayChallenge.id==='ae'?20:16;
+      if(Math.sqrt(cdx*cdx+cdy*cdy)<e.r+playerR){
         lives--;resetCombo();
         spawnParticles(ship.x,ship.y,'#ff0000',10);
         if(lives<=0){endGame();return false;}
@@ -1448,18 +1444,55 @@ function loop(){
   bossBullets=bossBullets.filter(b=>{
     b.x+=b.vx;b.y+=b.vy;b.vy+=0.03;b.life--;
     if(b.type==='lemon'){
-      if(b.big){pr(b.x-9,b.y-11,18,22,'#f5e000');pr(b.x-7,b.y-14,14,6,'#f5e000');pr(b.x-6,b.y-9,12,16,'#ffff88');pr(b.x-4,b.y-11,8,4,'#ffffff');}
-      else{pr(b.x-5,b.y-6,10,12,'#f5e000');pr(b.x-3,b.y-8,6,4,'#f5e000');pr(b.x-3,b.y-5,6,8,'#ffff88');}
+      let r=b.big?12:7;
+      let rot=fr*0.06;
+      // 8角星形（長短交替）
+      cx.fillStyle='#f5e000';
+      cx.beginPath();
+      for(let i=0;i<16;i++){
+        let a=rot+i*Math.PI/8;
+        let ri=i%2===0?r:r*0.42;
+        let px=b.x+Math.cos(a)*ri,py=b.y+Math.sin(a)*ri;
+        i===0?cx.moveTo(snap(px),snap(py)):cx.lineTo(snap(px),snap(py));
+      }
+      cx.closePath();cx.fill();
+      // 內層亮黃
+      cx.fillStyle='#fff066';
+      cx.beginPath();
+      for(let i=0;i<16;i++){
+        let a=rot+i*Math.PI/8;
+        let ri=i%2===0?r*0.7:r*0.3;
+        let px=b.x+Math.cos(a)*ri,py=b.y+Math.sin(a)*ri;
+        i===0?cx.moveTo(snap(px),snap(py)):cx.lineTo(snap(px),snap(py));
+      }
+      cx.closePath();cx.fill();
+      // 中心白光
+      cx.fillStyle='#fffde0';cx.beginPath();cx.arc(snap(b.x),snap(b.y),r*0.22,0,Math.PI*2);cx.fill();
+      cx.fillStyle='#ffffff';cx.beginPath();cx.arc(snap(b.x-r*0.06),snap(b.y-r*0.06),r*0.12,0,Math.PI*2);cx.fill();
     } else {
       pr(b.x-b.r,b.y-b.r,b.r*2,b.r*2,'#1a0a2e');pr(b.x-b.r+2,b.y-b.r+2,b.r*2-4,b.r*2-4,'#2d1155');pr(b.x-2,b.y-2,4,4,'#8800ff');
     }
-    if(superMode<=0&&sweepMode<=0){let dx=b.x-ship.x,dy=b.y-ship.y;if(Math.sqrt(dx*dx+dy*dy)<b.r+14){lives--;resetCombo();spawnParticles(ship.x,ship.y,'#00ff88',10);if(lives<=0){endGame();return false;}return false;}}
+    if(superMode<=0&&sweepMode<=0){
+      let dx=b.x-ship.x,dy=b.y-ship.y;
+      // ae Day：只有中間外星飛船範圍（半徑20），其他正常（+14）
+      let hitR=b.r+(challengeMode&&todayChallenge&&todayChallenge.id==='ae'?20:14);
+      if(Math.sqrt(dx*dx+dy*dy)<hitR){lives--;resetCombo();spawnParticles(ship.x,ship.y,'#00ff88',10);if(lives<=0){endGame();return false;}return false;}
+    }
     return b.life>0&&b.y<H+20;
   });
 
 
   powerups=powerups.filter(p=>{
     p.y+=p.vy;
+    // 磁吸漂移：道具輕微往玩家方向漂移（bullet 自動收集不需要漂移）
+    if(p.type!=='bullet'&&ship){
+      let dx=ship.x-p.x,dy=ship.y-p.y;
+      let dist=Math.sqrt(dx*dx+dy*dy)||1;
+      if(dist<120){
+        p.x+=dx/dist*0.8;
+        p.y+=dy/dist*0.8;
+      }
+    }
     // bullet 增強劑：自動收集，不需靠近
     if(p.type==='bullet'){
       if(bulletLevel<9){
@@ -1475,7 +1508,14 @@ function loop(){
     }
     drawPickup(p);
     let dx=p.x-ship.x,dy=p.y-ship.y;
-    if(Math.sqrt(dx*dx+dy*dy)<22){
+    // 收集半徑：多角色模式擴大到整個圖示範圍
+    let collectR=22;
+    if(challengeMode&&todayChallenge){
+      const id=todayChallenge.id;
+      if(id==='ae') collectR=80;          // 菱形半徑約72*0.85
+      else if(id==='kwangya'||id==='lemon') collectR=90; // 一排寬度52*1.5
+    }
+    if(Math.sqrt(dx*dx+dy*dy)<collectR){
       if(p.type==='hp'){lives=Math.min(9,lives+1);spawnParticles(ship.x,ship.y,'#00ff44',12);}
       else if(p.type==='mint'){
         // 薄荷巧克力：子彈擴散升一級
@@ -1486,26 +1526,19 @@ function loop(){
       else if(p.type==='corn'){
         const bulletDmg=[1,1,2,2,3,3,4,4,5,5];
         let dmgVal=bulletDmg[Math.min(bulletLevel,9)];
-        // 爆炸特效：大量黃白粒子
         spawnParticles(p.x,p.y,'#ffee88',25);
         spawnParticles(p.x,p.y,'#ffffff',15);
         spawnParticles(p.x,p.y,'#ffcc44',10);
         shakeTimer=8;
-        // 大閃光
         cx.save();cx.globalAlpha=0.6;cx.fillStyle='#ffffaa';
         cx.beginPath();cx.arc(snap(p.x),snap(p.y),40,0,Math.PI*2);cx.fill();
         cx.globalAlpha=1;cx.restore();
-        // 射出 20 顆爆米花（更多更密）
         for(let i=0;i<20;i++){
           let a=(i/20)*Math.PI*2+Math.random()*0.3;
           let spd=2.5+Math.random()*4;
-          bullets.push({
-            x:p.x,y:p.y,
-            vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
-            laser:false,big:false,bsize:'popcorn',dmg:dmgVal
-          });
+          bullets.push({x:p.x,y:p.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,laser:false,big:false,bsize:'popcorn',dmg:dmgVal});
         }
-        triggerMsg('🌽 爆米花！','#ffee44');
+        triggerMsg('long chat (#♥)','#ffee44');
       }
       else if(p.type==='lemon_green'){
         // 加子彈經驗值
