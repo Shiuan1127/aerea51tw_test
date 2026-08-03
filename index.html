@@ -186,6 +186,17 @@ body[data-mode="ko"] .lyric-ph { display:none; }
 .signal-controls { display:flex; justify-content:center; margin-top:14px; }
 .sig-fade { animation:sigFade .5s ease; }
 @keyframes sigFade { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+
+/* MESSAGE SUBMIT MODAL */
+.modal-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:9998; align-items:center; justify-content:center; padding:20px; }
+.modal-backdrop.open { display:flex; }
+.modal-box { width:100%; max-width:420px; max-height:90vh; overflow-y:auto; border:1px solid var(--border-hi); background:var(--panel); animation:sigFade .25s ease; }
+.form-label { display:block; font-size:10px; letter-spacing:2px; color:var(--cyan-dim); margin:14px 0 6px; }
+.form-label:first-child { margin-top:0; }
+.form-input { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--white); font-family:'Share Tech Mono',monospace; font-size:13px; padding:10px 12px; resize:vertical; }
+.form-input:focus { outline:none; border-color:var(--cyan-dim); }
+.char-count { text-align:right; font-size:9px; color:var(--white-faint); margin-top:4px; }
+.form-error { color:var(--red); font-size:11px; margin-top:8px; min-height:14px; }
 </style>
 </head>
 <body data-mode="both" data-fsize="1">
@@ -310,7 +321,7 @@ body[data-mode="ko"] .lyric-ph { display:none; }
       <div class="panel-header"><span class="pd pd-r"></span><span class="pd pd-y"></span><span class="pd pd-g"></span><span style="margin-left:6px">傳送頻道 TRANSMIT</span></div>
       <div class="panel-body">
         <p class="placeholder-note">NODE-17 開放一個小小的接收頻道 —— 如果有什麼話想說給 aespa 聽，寫下來交給我們，我們會把這些訊號一則一則送過去。</p>
-        <a class="btn btn-cyan btn-block" style="margin-top:14px" id="messageFormBtn" href="#" target="_blank">📡 送出你的訊號</a>
+        <button class="btn btn-cyan btn-block" style="margin-top:14px;width:100%" type="button" onclick="openMessageModal()">📡 送出你的訊號</button>
       </div>
     </div>
 
@@ -324,6 +335,44 @@ body[data-mode="ko"] .lyric-ph { display:none; }
     </div>
   </div>
   <div class="page-footer"><span>aerea51tw // CLASSIFIED</span><span>留言專區</span><span>NODE-17</span></div>
+</div>
+
+<!-- ══════════════════ MESSAGE SUBMIT MODAL ══════════════════ -->
+<div class="modal-backdrop" id="msgModalBackdrop" onclick="if(event.target===this)closeMessageModal()">
+  <div class="modal-box">
+    <div class="panel-header"><span class="pd pd-r"></span><span class="pd pd-y"></span><span class="pd pd-g"></span><span style="margin-left:6px">傳送訊號 // NEW TRANSMISSION</span><span style="flex:1"></span><span style="cursor:pointer" onclick="closeMessageModal()">✕</span></div>
+    <div class="panel-body" style="padding:18px">
+      <label class="form-label">所在地 ／ 國旗</label>
+      <select class="form-input" id="msgFlag">
+        <option value="🇹🇼">🇹🇼 台灣</option>
+        <option value="🇰🇷">🇰🇷 韓國</option>
+        <option value="🇯🇵">🇯🇵 日本</option>
+        <option value="🇭🇰">🇭🇰 香港</option>
+        <option value="🇲🇴">🇲🇴 澳門</option>
+        <option value="🇨🇳">🇨🇳 中國</option>
+        <option value="🇸🇬">🇸🇬 新加坡</option>
+        <option value="🇲🇾">🇲🇾 馬來西亞</option>
+        <option value="🇹🇭">🇹🇭 泰國</option>
+        <option value="🇻🇳">🇻🇳 越南</option>
+        <option value="🇵🇭">🇵🇭 菲律賓</option>
+        <option value="🇮🇩">🇮🇩 印尼</option>
+        <option value="🇺🇸">🇺🇸 美國</option>
+        <option value="🇬🇧">🇬🇧 英國</option>
+        <option value="🇧🇷">🇧🇷 巴西</option>
+        <option value="🌐">🌐 其他</option>
+      </select>
+
+      <label class="form-label">署名（留空自動顯示為 MY）</label>
+      <input class="form-input" id="msgName" maxlength="16" placeholder="MY">
+
+      <label class="form-label">留言內容</label>
+      <textarea class="form-input" id="msgText" rows="4" maxlength="300" placeholder="想對 aespa 說的話..."></textarea>
+      <div class="char-count" id="msgCharCount">0 / 300</div>
+      <div class="form-error" id="msgError"></div>
+
+      <button class="btn btn-cyan btn-block" style="margin-top:14px;width:100%" type="button" onclick="submitMessage()">📡 送出訊號</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════ SONG PAGE (dynamic) ══════════════════ -->
@@ -769,6 +818,70 @@ function nextMessageManual(){
 shuffleMessages();
 showNextMessage();
 msgTimer = setInterval(showNextMessage, 7000);
+
+/* ══════════════════ MESSAGE SUBMIT MODAL ══════════════════
+   收集方式：送出時會把資料 POST 到下面這個 Google 表單。
+   步驟：
+   1. 自己開一個 Google 表單，建立三個問題：所在地、署名、留言內容（三題都設「簡答」或「段落」即可）
+   2. 點表單右上角「⋮」→「取得預先填寫的連結」，把三個欄位都隨便填點文字產生連結
+   3. 把產生的網址貼進下面 GOOGLE_FORM_ACTION，並把網址上 entry.xxxxxxxxx 的號碼分別填進 ENTRY_IDS
+      （記得把網址最後的 viewform 換成 formResponse）
+   在你設定好之前，這裡先留著這三個佔位值，按送出不會出錯，只是資料不會真的送到任何地方。 */
+const GOOGLE_FORM_ACTION = 'https://docs.google.com/forms/d/e/REPLACE_WITH_YOUR_FORM_ID/formResponse';
+const ENTRY_IDS = { flag: 'entry.000000001', name: 'entry.000000002', message: 'entry.000000003' };
+
+/* 不當字詞過濾 —— 這裡先留幾個示範用詞當作機制範例。
+   實際要擋的字詞（辱罵、髒話、特定造謠用語等）建議你自己補進這個陣列，
+   因為你們社群會遇到的針對性字眼，你會比我更清楚該擋哪些，
+   我這邊不方便列一份完整的髒話／國罵清單。
+   注意：這只是送出前的第一層即時提醒，真正把關還是靠你之後手動把訊息貼進 SIGNAL LOG 之前的檢查。 */
+const BAD_WORDS = ['示範字詞1', '示範字詞2', 'badword1', 'badword2'];
+
+function openMessageModal(){
+  document.getElementById('msgModalBackdrop').classList.add('open');
+  document.getElementById('msgError').textContent = '';
+}
+function closeMessageModal(){
+  document.getElementById('msgModalBackdrop').classList.remove('open');
+}
+document.getElementById('msgText').addEventListener('input', function(){
+  document.getElementById('msgCharCount').textContent = this.value.length + ' / 300';
+});
+function containsBadWord(text){
+  const lower = text.toLowerCase();
+  return BAD_WORDS.some(w => w && lower.includes(w.toLowerCase()));
+}
+function submitMessage(){
+  const flag = document.getElementById('msgFlag').value;
+  const nameInput = document.getElementById('msgName').value.trim();
+  const name = nameInput || 'MY';
+  const text = document.getElementById('msgText').value.trim();
+  const errEl = document.getElementById('msgError');
+
+  if(!text){ errEl.textContent = '請輸入留言內容。'; return; }
+  if(containsBadWord(text) || containsBadWord(name)){
+    errEl.textContent = '偵測到不適當字詞，請修改內容後再送出。';
+    return;
+  }
+  errEl.textContent = '';
+
+  const fd = new FormData();
+  fd.append(ENTRY_IDS.flag, flag);
+  fd.append(ENTRY_IDS.name, name);
+  fd.append(ENTRY_IDS.message, text);
+  fetch(GOOGLE_FORM_ACTION, { method:'POST', mode:'no-cors', body:fd }).catch(()=>{});
+
+  errEl.style.color = 'var(--cyan)';
+  errEl.textContent = '📡 訊號已送出，感謝你的心意。';
+  setTimeout(()=>{
+    closeMessageModal();
+    document.getElementById('msgName').value = '';
+    document.getElementById('msgText').value = '';
+    document.getElementById('msgCharCount').textContent = '0 / 300';
+    errEl.style.color = 'var(--red)';
+    errEl.textContent = '';
+  }, 1600);
+}
 </script>
 </body>
 </html>
