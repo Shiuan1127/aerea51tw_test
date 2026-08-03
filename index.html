@@ -197,6 +197,30 @@ body[data-mode="ko"] .lyric-ph { display:none; }
 .form-input:focus { outline:none; border-color:var(--cyan-dim); }
 .char-count { text-align:right; font-size:9px; color:var(--white-faint); margin-top:4px; }
 .form-error { color:var(--red); font-size:11px; margin-top:8px; min-height:14px; }
+
+/* SEATING ZONE TOGGLE (concert info) */
+.zone-toggle-row { display:flex; gap:8px; margin-bottom:14px; }
+.zone-btn { flex:1; padding:10px 6px; text-align:center; border:1px solid var(--cyan-dim); background:var(--cyan-faint); color:var(--cyan); font-family:'Share Tech Mono',monospace; font-size:13px; letter-spacing:2px; cursor:pointer; transition:all .15s; }
+.zone-btn.dim { border-color:var(--border); background:transparent; color:var(--white-faint); }
+.zone-btn .zb-sub { display:block; font-size:8.5px; letter-spacing:.5px; margin-top:4px; opacity:.85; }
+.zone-images { display:flex; flex-direction:column; gap:12px; }
+.zone-image-card { border:1px solid var(--border); background:#000; }
+.zone-image-card img { width:100%; display:block; cursor:zoom-in; }
+.zone-image-card .zic-cap { padding:6px 10px; font-size:10px; color:var(--white-faint); border-top:1px solid var(--border); background:var(--panel); }
+
+/* MATERIALS ACCORDION */
+.mat-header { cursor:pointer; user-select:none; }
+
+/* LIGHTBOX */
+#lightboxBackdrop img { border:1px solid var(--border-hi); max-width:100%; max-height:70vh; display:block; margin:0 auto; }
+.lightbox-close { position:absolute; top:14px; right:18px; color:var(--white); font-size:20px; cursor:pointer; z-index:2; }
+.lightbox-body { display:flex; flex-direction:column; align-items:center; max-width:90vw; }
+.lightbox-cap { color:var(--white-dim); font-size:12px; letter-spacing:.5px; line-height:1.7; margin-top:14px; text-align:center; max-width:480px; }
+.lightbox-count { color:var(--white-faint); font-size:10px; letter-spacing:2px; margin-top:8px; }
+.lightbox-nav { position:fixed; top:50%; transform:translateY(-50%); background:transparent; border:1px solid var(--border-hi); color:var(--white); width:38px; height:38px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:2; }
+.lightbox-nav:hover { border-color:var(--cyan-dim); color:var(--cyan); }
+.lightbox-prev { left:10px; }
+.lightbox-next { right:10px; }
 </style>
 </head>
 <body data-mode="both" data-fsize="1">
@@ -375,6 +399,18 @@ body[data-mode="ko"] .lyric-ph { display:none; }
   </div>
 </div>
 
+<!-- ══════════════════ LIGHTBOX (image zoom + swipe gallery, shared) ══════════════════ -->
+<div class="modal-backdrop" id="lightboxBackdrop" onclick="if(event.target===this)closeLightbox()">
+  <span class="lightbox-close" onclick="closeLightbox()">✕</span>
+  <button class="lightbox-nav lightbox-prev" id="lightboxPrev" onclick="lightboxNav(-1)">‹</button>
+  <div class="lightbox-body">
+    <img id="lightboxImg" src="" alt="">
+    <div class="lightbox-cap" id="lightboxCap"></div>
+    <div class="lightbox-count" id="lightboxCount"></div>
+  </div>
+  <button class="lightbox-nav lightbox-next" id="lightboxNext" onclick="lightboxNav(1)">›</button>
+</div>
+
 <!-- ══════════════════ SONG PAGE (dynamic) ══════════════════ -->
 <div class="page" id="page-song">
   <div class="page-statusbar">
@@ -405,6 +441,76 @@ function addLine(text,cls,parent,speed=18){return new Promise(async res=>{const 
 function startClock(id){const el=document.getElementById(id);if(!el)return;const tick=()=>{const n=new Date();el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');};tick();setInterval(tick,1000);}
 function goPage(id){document.querySelectorAll('.page.active').forEach(p=>p.classList.remove('active'));const next=document.getElementById(id);if(next)next.classList.add('active');window.scrollTo(0,0);}
 ['clockHub','clockA','clockB','clockC','clockD','clockE','clockF','clockG','clockH'].forEach(startClock);
+
+/* ══════════════════ LIGHTBOX (shared image zoom + swipe gallery) ══════════════════ */
+const REF_GALLERY = [
+  {src:'assets/ref-01.jpg', cap:'造型參考 01'},
+  {src:'assets/ref-02.jpg', cap:'造型參考 02'},
+  {src:'assets/ref-03.jpg', cap:'造型參考 03'},
+  {src:'assets/ref-04.jpg', cap:'造型參考 04'},
+  {src:'assets/ref-05.jpg', cap:'造型參考 05'},
+  {src:'assets/ref-06.jpg', cap:'造型參考 06'},
+];
+let lightboxImages = [];
+let lightboxIndex = 0;
+function openLightbox(images, index){
+  lightboxImages = images;
+  lightboxIndex = index || 0;
+  renderLightbox();
+  document.getElementById('lightboxBackdrop').classList.add('open');
+}
+function renderLightbox(){
+  const item = lightboxImages[lightboxIndex];
+  if(!item) return;
+  document.getElementById('lightboxImg').src = item.src;
+  document.getElementById('lightboxCap').textContent = item.note || item.cap || '';
+  const multi = lightboxImages.length > 1;
+  document.getElementById('lightboxCount').textContent = multi ? (lightboxIndex+1) + ' / ' + lightboxImages.length : '';
+  document.getElementById('lightboxPrev').style.display = multi ? 'flex' : 'none';
+  document.getElementById('lightboxNext').style.display = multi ? 'flex' : 'none';
+}
+function lightboxNav(delta){
+  lightboxIndex = (lightboxIndex + delta + lightboxImages.length) % lightboxImages.length;
+  renderLightbox();
+}
+function closeLightbox(){
+  document.getElementById('lightboxBackdrop').classList.remove('open');
+}
+(function(){
+  const backdrop = document.getElementById('lightboxBackdrop');
+  let touchStartX = 0;
+  backdrop.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive:true});
+  backdrop.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if(Math.abs(dx) > 40) lightboxNav(dx < 0 ? 1 : -1);
+  }, {passive:true});
+})();
+
+/* ══════════════════ SEATING ZONE TOGGLE (concert info) ══════════════════
+   單選分頁形式：一次只顯示一個分區的入口資訊＋圖片，預設選 B2。 */
+const ZONES = {
+  b2: {label:'B2', sub:'觀眾席', gates:['GATE 5'], img:'assets/gate-b2.jpg'},
+  b1: {label:'B1', sub:'看台區／身障席', gates:['GATE 2','GATE 3','GATE 4','GATE 6'], img:'assets/gate-b1.jpg'},
+  l1: {label:'L1', sub:'L2–L5（身障席經 GATE 1）', gates:['GATE 1','GATE 2','GATE 3','GATE 4','GATE B','GATE C'], img:'assets/gate-l1.jpg'},
+};
+let selectedZone = 'b2';
+function selectZone(key){
+  selectedZone = key;
+  renderZones();
+}
+function renderZones(){
+  const btnWrap = document.getElementById('zoneButtons');
+  const tagWrap = document.getElementById('zoneGateTags');
+  const imgWrap = document.getElementById('zoneImages');
+  if(!btnWrap || !imgWrap) return;
+  btnWrap.innerHTML = Object.entries(ZONES).map(([key,z]) => {
+    const active = key === selectedZone;
+    return `<div class="zone-btn ${active ? '' : 'dim'}" onclick="selectZone('${key}')">${z.label}<span class="zb-sub">${z.sub}</span></div>`;
+  }).join('');
+  const z = ZONES[selectedZone];
+  tagWrap.innerHTML = z.gates.map(g => `<span class="gate-tag">${g}</span>`).join('');
+  imgWrap.innerHTML = `<div class="zone-image-card"><img src="${z.img}" alt="${z.label}" onclick="openLightbox([{src:'${z.img}',cap:'${z.label} ／ ${z.sub}'}],0)"><div class="zic-cap">${z.label} ／ ${z.sub}</div></div>`;
+}
 
 /* ══════════════════ BOOT SEQUENCE ══════════════════ */
 async function bootSequence(){
@@ -494,10 +600,10 @@ document.getElementById('concertContent').innerHTML = `
   <div class="panel">
     <div class="panel-header"><span class="pd pd-r"></span><span class="pd pd-y"></span><span class="pd pd-g"></span><span style="margin-left:6px">入口相關資訊 ENTRY GATE</span></div>
     <div class="panel-body">
-      <div class="gate-row"><div class="gate-zone">B2 觀眾席</div><div class="gate-tags"><span class="gate-tag">GATE 5</span></div></div>
-      <div class="gate-row"><div class="gate-zone">B1 看台區 ／ B1 身障席</div><div class="gate-tags"><span class="gate-tag">GATE 2</span><span class="gate-tag">GATE 3</span><span class="gate-tag">GATE 4</span><span class="gate-tag">GATE 6</span></div></div>
-      <div class="gate-row"><div class="gate-zone">L2、L3、L4、L5</div><div class="gate-tags"><span class="gate-tag">GATE 1</span><span class="gate-tag">GATE 2</span><span class="gate-tag">GATE 3</span><span class="gate-tag">GATE 4</span><span class="gate-tag">GATE B</span><span class="gate-tag">GATE C</span></div></div>
-      <div class="gate-row"><div class="gate-zone">L2、L3、L4 身障席</div><div class="gate-tags"><span class="gate-tag">GATE 1</span></div></div>
+      <p class="placeholder-note" style="margin-bottom:12px">點選分區查看入場閘門與座位示意圖（圖片可點擊放大）。</p>
+      <div class="zone-toggle-row" id="zoneButtons"></div>
+      <div class="gate-tags" id="zoneGateTags" style="margin-bottom:12px"></div>
+      <div class="zone-images" id="zoneImages"></div>
       <div class="note-box">請隨時留意現場實際狀況，並耐心配合工作人員指引依序入場。</div>
     </div>
   </div>
@@ -525,6 +631,7 @@ document.getElementById('concertContent').innerHTML = `
     </div>
   </div>
 `;
+renderZones();
 
 /* ── 交通資訊 ── */
 document.getElementById('transportContent').innerHTML = `
@@ -604,12 +711,12 @@ document.getElementById('dresscodeContent').innerHTML = `
     <div class="panel-body">
       <p class="placeholder-note" style="margin-bottom:12px">以下為 AI 生成的造型示意圖，提供搭配靈感參考，不代表官方週邊或必要穿搭。</p>
       <div class="style-gallery">
-        <div class="style-card"><img src="assets/ref-01.jpg" alt="造型參考 01"><div class="sc-cap">REF // 01</div></div>
-        <div class="style-card"><img src="assets/ref-02.jpg" alt="造型參考 02"><div class="sc-cap">REF // 02</div></div>
-        <div class="style-card"><img src="assets/ref-03.jpg" alt="造型參考 03"><div class="sc-cap">REF // 03</div></div>
-        <div class="style-card"><img src="assets/ref-04.jpg" alt="造型參考 04"><div class="sc-cap">REF // 04</div></div>
-        <div class="style-card"><img src="assets/ref-05.jpg" alt="造型參考 05"><div class="sc-cap">REF // 05</div></div>
-        <div class="style-card"><img src="assets/ref-06.jpg" alt="造型參考 06"><div class="sc-cap">REF // 06</div></div>
+        <div class="style-card"><img src="assets/ref-01.jpg" alt="造型參考 01" onclick="openLightbox(REF_GALLERY, 0)"><div class="sc-cap">REF // 01</div></div>
+        <div class="style-card"><img src="assets/ref-02.jpg" alt="造型參考 02" onclick="openLightbox(REF_GALLERY, 1)"><div class="sc-cap">REF // 02</div></div>
+        <div class="style-card"><img src="assets/ref-03.jpg" alt="造型參考 03" onclick="openLightbox(REF_GALLERY, 2)"><div class="sc-cap">REF // 03</div></div>
+        <div class="style-card"><img src="assets/ref-04.jpg" alt="造型參考 04" onclick="openLightbox(REF_GALLERY, 3)"><div class="sc-cap">REF // 04</div></div>
+        <div class="style-card"><img src="assets/ref-05.jpg" alt="造型參考 05" onclick="openLightbox(REF_GALLERY, 4)"><div class="sc-cap">REF // 05</div></div>
+        <div class="style-card"><img src="assets/ref-06.jpg" alt="造型參考 06" onclick="openLightbox(REF_GALLERY, 5)"><div class="sc-cap">REF // 06</div></div>
       </div>
     </div>
   </div>
@@ -747,42 +854,63 @@ function changeFsize(delta){
 }
 
 /* ══════════════════ 應援素材 / FAN MATERIALS ══════════════════
-   每個項目：{title, sub, ready, href, thumb}
-   ready:false 時顯示「即將上線」佔位卡；等你把圖檔給我，
-   我會把檔案放進 assets/，並把 ready 改成 true、href 換成實際檔案路徑。 */
+   每個分類點開後顯示 intro 說明文字 + 圖片（可點擊放大）+ 若有 printCode 會附上
+   ibon 列印碼與列印步驟。story（限動模板）還沒有圖，images 留空陣列即可，
+   等設計檔給我，我會把圖放進 assets/ 並補上 images。 */
 const MATERIALS = {
   ticket: {
     label: '票夾 TICKET HOLDER',
-    items: [
-      {title:'票夾樣式 A', sub:'JPG ／ 直式', ready:false, href:'#', thumb:''},
-      {title:'票夾樣式 B', sub:'JPG ／ 直式', ready:false, href:'#', thumb:''},
-    ]
+    intro: '設計組做的「Ticket Armor」票夾，可以直接去 7-11 ibon 用列印碼印出來，摺好就能保護當天的票券。',
+    images: [
+      {src:'assets/ticket-notice.jpg', cap:'TICKET ARMOR PROTOCOL', note:'這是票夾主題的公告圖 —— 左右滑動可以看下一張，了解實際怎麼使用。'},
+      {src:'assets/ticket-overview.jpg', cap:'整體示意 ／ 票夾＋票券', note:'組裝後的樣子：把票根收進票夾內側，就能保護票券不被摺到或刮傷。'},
+      {src:'assets/ticket-qr.jpg', cap:'ibon 列印碼 QR', note:'拿這組列印碼或直接掃描 QR Code，到任一 7-11 的 ibon 機台就能印出這張票夾（A4／彩色／特殊用紙／單面）。'},
+    ],
+    printCode: 'ASUSUMX7I6QJX',
+    printSpec: 'A4 ／ 彩色 ／ 特殊用紙 ／ 單面',
   },
   story: {
     label: 'IG 限動模板 STORY TEMPLATE',
-    items: [
-      {title:'限動模板 01', sub:'PNG ／ 9:16', ready:false, href:'#', thumb:''},
-      {title:'限動模板 02', sub:'PNG ／ 9:16', ready:false, href:'#', thumb:''},
-    ]
+    intro: '設計檔尚未上傳，準備好後告訴我，我會把圖放進來。',
+    images: [],
   }
 };
+let openMatGroups = new Set();
+function toggleMaterialGroup(key){
+  if(openMatGroups.has(key)) openMatGroups.delete(key); else openMatGroups.add(key);
+  renderMaterials();
+}
 function renderMaterials(){
   const wrap = document.getElementById('materialsContent');
-  wrap.innerHTML = Object.values(MATERIALS).map(group => `
+  wrap.innerHTML = Object.entries(MATERIALS).map(([key, group]) => {
+    const isOpen = openMatGroups.has(key);
+    return `
     <div class="panel">
-      <div class="panel-header"><span class="pd pd-r"></span><span class="pd pd-y"></span><span class="pd pd-g"></span><span style="margin-left:6px">${group.label}</span></div>
-      <div class="panel-body">
-        <div class="dl-grid">
-          ${group.items.map(it => `
-            <div class="dl-card ${it.ready ? '' : 'locked'}">
-              <div class="dl-thumb">${it.ready && it.thumb ? `<img src="${it.thumb}" alt="${it.title}">` : '尚未上傳'}</div>
-              <div class="dl-title">${it.title}</div>
-              <div class="dl-sub">${it.sub}</div>
-              ${it.ready ? `<a class="btn btn-sm btn-cyan" href="${it.href}" download>↓ 下載</a>` : `<span class="badge b-faint">即將上線</span>`}
-            </div>`).join('')}
-        </div>
+      <div class="panel-header mat-header" onclick="toggleMaterialGroup('${key}')">
+        <span class="pd pd-r"></span><span class="pd pd-y"></span><span class="pd pd-g"></span>
+        <span style="margin-left:6px;flex:1">${group.label}</span>
+        <span>${isOpen ? '▾' : '▸'}</span>
       </div>
-    </div>`).join('');
+      ${isOpen ? `
+      <div class="panel-body">
+        <p class="placeholder-note" style="margin-bottom:12px">${group.intro}</p>
+        ${group.images.length ? `<div class="style-gallery">
+          ${group.images.map((im, i) => `<div class="style-card"><img src="${im.src}" alt="${im.cap}" onclick="openLightbox(MATERIALS.${key}.images, ${i})"><div class="sc-cap">${im.cap}</div></div>`).join('')}
+        </div>` : ''}
+        ${group.printCode ? `
+        <div class="note-box" style="margin-top:14px">
+          <div style="margin-bottom:6px">IBON 列印碼：<span class="t-cyan">${group.printCode}</span></div>
+          <div>規格：${group.printSpec}</div>
+        </div>
+        <ul class="step-list" style="margin-top:14px">
+          <li>到任一 7-11 門市的 ibon 機台</li>
+          <li>點選「掃描／列印」→「雲端列印」→「ibon 個人文件」</li>
+          <li>輸入上面的列印碼，或直接掃描 QR Code 圖片</li>
+          <li>確認列印設定與金額，付款後取件</li>
+        </ul>` : ''}
+      </div>` : ''}
+    </div>`;
+  }).join('');
 }
 renderMaterials();
 
