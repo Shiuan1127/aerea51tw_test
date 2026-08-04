@@ -222,6 +222,38 @@ body[data-mode="ko"] .lyric-ph { display:none; }
 .lightbox-nav:hover { border-color:var(--cyan-dim); color:var(--cyan); }
 .lightbox-prev { left:10px; }
 .lightbox-next { right:10px; }
+
+/* ENTRY GATE two-column layout (stacked on mobile, side-by-side on desktop) */
+.zone-layout { display:flex; flex-direction:column; gap:14px; }
+.zone-left { }
+.zone-right { min-width:0; }
+.gate-tags { margin-top:10px; }
+@keyframes zoneSlideIn { from{opacity:0; transform:translateX(20px);} to{opacity:1; transform:translateX(0);} }
+.zone-image-card { animation:zoneSlideIn .35s ease; }
+
+/* THREE-ACROSS INFO ROW (basic info / door time / booth info) */
+.info-row-3 { display:flex; flex-direction:column; }
+
+/* ══════════════════ DESKTOP LAYOUT (viewport ≥ 900px) ══════════════════
+   手機版維持原樣不受影響；以下規則只在較寬的螢幕套用，
+   讓內容不要被拉滿整個視窗寬度、圖片不要放大到模糊。 */
+@media (min-width: 900px) {
+  .page-content { max-width: 920px; margin: 0 auto; }
+
+  .info-row-3 { flex-direction: row; gap: 14px; align-items: stretch; }
+  .info-row-3 .panel { flex: 1; margin-bottom: 0; }
+
+  .zone-layout { flex-direction: row; align-items: flex-start; gap: 22px; }
+  .zone-left { flex: 0 0 220px; }
+  .zone-right { flex: 1; }
+  .zone-toggle-row { flex-direction: column; gap: 8px; }
+  .zone-btn { text-align: left; padding: 12px 14px; }
+  .zone-image-card img { max-height: 480px; object-fit: contain; background:#000; }
+
+  .style-gallery { grid-template-columns: repeat(3, 1fr); }
+  .style-card img { max-height: 260px; object-fit: cover; width:100%; }
+  .dl-grid { grid-template-columns: repeat(3, 1fr); }
+}
 </style>
 </head>
 <body data-mode="both" data-fsize="1">
@@ -569,6 +601,7 @@ function pendingPanel(labelZh){
 }
 /* ── 演唱會資訊 ── 主辦官方公告內容 ── */
 document.getElementById('concertContent').innerHTML = `
+  <div class="info-row-3">
   <div class="panel">
     <div class="panel-header"><span class="pd pd-r"></span><span class="pd pd-y"></span><span class="pd pd-g"></span><span style="margin-left:6px">基本資訊</span></div>
     <div class="panel-body">
@@ -597,14 +630,21 @@ document.getElementById('concertContent').innerHTML = `
       <div class="kv-row"><span class="kv-time">13:00</span><span class="kv-label">官方周邊商品 Merch</span></div>
     </div>
   </div>
+  </div>
 
   <div class="panel">
     <div class="panel-header"><span class="pd pd-r"></span><span class="pd pd-y"></span><span class="pd pd-g"></span><span style="margin-left:6px">入口相關資訊 ENTRY GATE</span></div>
     <div class="panel-body">
       <p class="placeholder-note" style="margin-bottom:12px">點選分區查看入場閘門與座位示意圖（圖片可點擊放大）。</p>
-      <div class="zone-toggle-row" id="zoneButtons"></div>
-      <div class="gate-tags" id="zoneGateTags" style="margin-bottom:12px"></div>
-      <div class="zone-images" id="zoneImages"></div>
+      <div class="zone-layout">
+        <div class="zone-left">
+          <div class="zone-toggle-row" id="zoneButtons"></div>
+          <div class="gate-tags" id="zoneGateTags"></div>
+        </div>
+        <div class="zone-right">
+          <div class="zone-images" id="zoneImages"></div>
+        </div>
+      </div>
       <div class="note-box">請隨時留意現場實際狀況，並耐心配合工作人員指引依序入場。</div>
     </div>
   </div>
