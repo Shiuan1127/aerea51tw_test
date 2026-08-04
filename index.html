@@ -863,7 +863,7 @@ const MATERIALS = {
     intro: '設計組做的「Ticket Armor」票夾，可以直接去 7-11 ibon 用列印碼印出來，摺好就能保護當天的票券。',
     images: [
       {src:'assets/ticket-notice.jpg', cap:'TICKET ARMOR PROTOCOL', note:'這是票夾主題的公告圖 —— 左右滑動可以看下一張，了解實際怎麼使用。'},
-      {src:'assets/ticket-overview.jpg', cap:'整體示意 ／ 票夾＋票券', note:'組裝後的樣子：把票根收進票夾內側，就能保護票券不被摺到或刮傷。'},
+      {src:'assets/ticket-overview.jpg', cap:'整體示意 ／ 票夾', note:'組裝後的樣子：把票根收進票夾內側，就能保護票券不被摺到或刮傷。'},
       {src:'assets/ticket-qr.jpg', cap:'ibon 列印碼 QR', note:'拿這組列印碼或直接掃描 QR Code，到任一 7-11 的 ibon 機台就能印出這張票夾（A4／彩色／特殊用紙／單面）。'},
     ],
     printCode: 'ASUSUMX7I6QJX',
@@ -955,8 +955,8 @@ msgTimer = setInterval(showNextMessage, 7000);
    3. 把產生的網址貼進下面 GOOGLE_FORM_ACTION，並把網址上 entry.xxxxxxxxx 的號碼分別填進 ENTRY_IDS
       （記得把網址最後的 viewform 換成 formResponse）
    在你設定好之前，這裡先留著這三個佔位值，按送出不會出錯，只是資料不會真的送到任何地方。 */
-const GOOGLE_FORM_ACTION = 'https://docs.google.com/forms/d/e/REPLACE_WITH_YOUR_FORM_ID/formResponse';
-const ENTRY_IDS = { flag: 'entry.000000001', name: 'entry.000000002', message: 'entry.000000003' };
+const GOOGLE_FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSe7eWuDktlj-lR9rqmrYq5RWPm62MApQEtmqJ8c9RVbkX-FiQ/formResponse';
+const ENTRY_IDS = { flag: 'entry.580409871=%E5%8F%B0%E7%81%A3', name: 'entry.404127694=%E6%B8%AC%E8%A9', message: 'entry.596714335=%E6%B8%AC%E8%A9%A6' };
 
 /* 不當字詞過濾 —— 這裡先留幾個示範用詞當作機制範例。
    實際要擋的字詞（辱罵、髒話、特定造謠用語等）建議你自己補進這個陣列，
