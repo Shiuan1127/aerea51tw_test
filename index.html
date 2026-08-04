@@ -993,11 +993,11 @@ function submitMessage(){
   }
   errEl.textContent = '';
 
-  const fd = new FormData();
-  fd.append(ENTRY_IDS.flag, flag);
-  fd.append(ENTRY_IDS.name, name);
-  fd.append(ENTRY_IDS.message, text);
-  fetch(GOOGLE_FORM_ACTION, { method:'POST', mode:'no-cors', body:fd }).catch(()=>{});
+  const params = new URLSearchParams();
+  params.append(ENTRY_IDS.flag, flag);
+  params.append(ENTRY_IDS.name, name);
+  params.append(ENTRY_IDS.message, text);
+  fetch(GOOGLE_FORM_ACTION, { method:'POST', mode:'no-cors', body:params }).catch(()=>{});
 
   errEl.style.color = 'var(--cyan)';
   errEl.textContent = '📡 訊號已送出，感謝你的心意。';
