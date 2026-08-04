@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>aerea51tw // RELAY-NODE-17 MISSION CONSOLE</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
 
@@ -915,14 +916,23 @@ function renderMaterials(){
 renderMaterials();
 
 /* ══════════════════ 留言專區 / SIGNAL LOG ══════════════════
-   MESSAGES 是你之後從表單收回來的訊息，貼進這個陣列即可，
-   格式：{text:'訊息內容', from:'暱稱或留空'}。
-   畫面會自動洗牌、隨機輪播，不用照順序排、也不用你手動排版。
-   下面先放兩則範例，示範格式用，記得換成真的收到的訊息。 */
-const MESSAGES = [
-  {text:'［範例訊號：把大家送出的訊息貼在這裡，一則一則加進陣列就好］', from:''},
+   完全自動模式：網站會直接抓 Google 試算表「發布到網路」產生的 CSV，
+   表單一收到，網站重新整理後就會自動顯示，不需要手動貼進陣列。
+
+   設定方式：
+   1. 打開跟表單連動的 Google 試算表
+   2. 檔案 → 共用 → 發布到網路
+   3. 選擇對應的分頁（通常叫「表單回應 1」），格式選「逗號分隔值 (.csv)」
+   4. 按「發布」，複製產生的網址，貼到下面 SHEET_CSV_URL
+   （這個網址等於任何人拿到連結都能看到表單裡「全部」的回覆內容，
+   不會出現在網站上被搜尋到，但不是完全私密，這點你已經知道並選擇接受。） */
+const SHEET_CSV_URL = 'REPLACE_WITH_YOUR_PUBLISHED_CSV_URL';
+
+const FALLBACK_MESSAGES = [
+  {text:'［範例訊號：表單網址設定好之後，這裡會自動換成大家送出的真實內容］', from:''},
   {text:'［範例訊號：from 可以留暱稱，也可以留空白顯示為匿名］', from:'MY'},
 ];
+let MESSAGES = FALLBACK_MESSAGES;
 let msgPool = [];
 let msgIndex = 0;
 let msgTimer = null;
@@ -931,21 +941,48 @@ function shuffleMessages(){
   msgIndex = 0;
 }
 function showNextMessage(){
-  if(msgIndex >= msgPool.length) shuffleMessages();
+  if(msgPool.length === 0 || msgIndex >= msgPool.length) shuffleMessages();
   const m = msgPool[msgIndex++];
   const box = document.getElementById('signalLog');
-  if(!box) return;
+  if(!box || !m) return;
   box.classList.remove('sig-fade'); void box.offsetWidth; box.classList.add('sig-fade');
-  box.innerHTML = `<div class="sig-id">SIGNAL #${String(m.id+1).padStart(3,'0')} // DECODED</div><div class="sig-text">${m.text}</div>` + (m.from ? `<div class="sig-from">— ${m.from}</div>` : '');
+  const fromLine = (m.flag ? m.flag + ' ' : '') + (m.from || 'MY');
+  box.innerHTML = `<div class="sig-id">SIGNAL #${String(m.id+1).padStart(3,'0')} // DECODED</div><div class="sig-text">${m.text}</div><div class="sig-from">— ${fromLine}</div>`;
 }
 function nextMessageManual(){
   showNextMessage();
   clearInterval(msgTimer);
   msgTimer = setInterval(showNextMessage, 7000);
 }
+function loadMessagesFromSheet(){
+  if(!SHEET_CSV_URL || SHEET_CSV_URL.indexOf('REPLACE_') === 0) return;
+  if(typeof Papa === 'undefined') return;
+  Papa.parse(SHEET_CSV_URL, {
+    download: true,
+    header: true,
+    complete: function(results){
+      const cols = results.meta.fields || [];
+      const flagCol = cols[1], nameCol = cols[2], textCol = cols[3];
+      const fetched = (results.data || [])
+        .map(r => ({
+          flag: (r[flagCol] || '').trim(),
+          from: (r[nameCol] || '').trim(),
+          text: (r[textCol] || '').trim(),
+        }))
+        .filter(m => m.text);
+      if(fetched.length){
+        MESSAGES = fetched;
+        shuffleMessages();
+        showNextMessage();
+      }
+    },
+    error: function(){ /* 抓不到就繼續顯示 FALLBACK_MESSAGES，不影響頁面運作 */ }
+  });
+}
 shuffleMessages();
 showNextMessage();
 msgTimer = setInterval(showNextMessage, 7000);
+loadMessagesFromSheet();
 
 /* ══════════════════ MESSAGE SUBMIT MODAL ══════════════════
    收集方式：送出時會把資料 POST 到下面這個 Google 表單。
@@ -958,12 +995,22 @@ msgTimer = setInterval(showNextMessage, 7000);
 const GOOGLE_FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSe7eWuDktlj-lR9rqmrYq5RWPm62MApQEtmqJ8c9RVbkX-FiQ/formResponse';
 const ENTRY_IDS = { flag: 'entry.1580409871', name: 'entry.404127694', message: 'entry.596714335' };
 
-/* 不當字詞過濾 —— 這裡先留幾個示範用詞當作機制範例。
-   實際要擋的字詞（辱罵、髒話、特定造謠用語等）建議你自己補進這個陣列，
-   因為你們社群會遇到的針對性字眼，你會比我更清楚該擋哪些，
-   我這邊不方便列一份完整的髒話／國罵清單。
-   注意：這只是送出前的第一層即時提醒，真正把關還是靠你之後手動把訊息貼進 SIGNAL LOG 之前的檢查。 */
-const BAD_WORDS = ['示範字詞1', '示範字詞2', 'badword1', 'badword2'];
+/* 不當字詞過濾 —— 已經照你的清單擋掉常見髒話／不雅字眼／造謠相關用語，
+   以及田柾國(Jungkook)相關名稱，避免被拿來配對造謠。
+   注意：因為留言專區現在是完全自動顯示（沒有人工審核這一關），
+   這個關鍵字檢查就是唯一的自動防線；但純前端關鍵字比對還是有機會被刻意繞過
+   （例如用同音字、加空格、簡繁轉換等方式），沒辦法做到 100% 擋下。
+   之後想到還有哪些字詞想擋，直接加進這個陣列裡就可以了。 */
+const BAD_WORDS = [
+  // 常見髒話／辱罵（中文）
+  '幹你娘', '幹你老師', '三小', '白痴', '智障', '賤人', '婊子', '死變態', '去死', '賤貨',
+  // common profanity (English)
+  'fuck', 'shit', 'bitch', 'asshole', 'cunt', 'dick', 'whore', 'slut',
+  // 造謠／黃謠相關
+  '黃謠', '造謠', '出軌', '約炮', '約砲', '劈腿', '上床', '性愛', '換帖', '偷情',
+  // 指定禁詞（避免與 Jungkook 相關配對造謠）
+  '田柾國', '柾國', 'Jeon Jeongguk', 'Jeongguk', '柾', '木正', '木正國',
+];
 
 function openMessageModal(){
   document.getElementById('msgModalBackdrop').classList.add('open');
